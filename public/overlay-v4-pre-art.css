@@ -1,0 +1,10 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; }
+.overlay { width: 100vw; height: 100vh; overflow: hidden; background: transparent; color: white; font-weight: bold; text-transform: uppercase; }
+.upper { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; align-items: center; gap: 20px; }
+.team { --team: #333; flex: 1; min-width: 0; height: 150px; padding: 20px 56px; background: linear-gradient(115deg, color-mix(in srgb, var(--team), #111 40%), color-mix(in srgb, var(--team), transparent 24%)); border: 1px solid color-mix(in srgb, var(--team), white 25%); box-shadow: 0 5px 16px #0006; backdrop-filter: blur(5px); }
+.team.left { clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%); }
+.team.right { text-align: right; clip-path: polygon(6% 0, 100% 0, 100% 100%, 0 100%); }
+.faction { font-size: 32px; letter-spacing: .1em; opacity: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { height: 112px; line-height: 112px; margin-top: -12px; white-space: nowrap; overflow: hidden; text-shadow: 2px 3px 4px #000; }
+.versus { flex: 0 0 76px; text-align: center; font-size: 44px; letter-spacing: .08em; text-shadow: 2px 3px 4px #000; }

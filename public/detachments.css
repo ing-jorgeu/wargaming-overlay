@@ -1,0 +1,5 @@
+.detachment-list { position: absolute; top: 181px; display: flex; flex-wrap: nowrap; gap: 12px; width: max-content; }
+.detachment-list.left { left: 382px; }
+.detachment-list.right { right: 382px; justify-content: flex-end; }
+.detachment-list:empty { display: none; }
+.detachment { padding: 7px 12px; border: 1px solid rgba(232, 228, 216, .35); border-radius: 5px; background: rgba(7, 10, 14, .78); box-shadow: 0 3px 8px #0008; color: #f1ecdc; font-size: 20px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }

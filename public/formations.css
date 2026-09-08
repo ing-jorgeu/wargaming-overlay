@@ -1,0 +1,5 @@
+.formation { --formation: #a88742; position: absolute; top: 170px; width: 350px; height: 62px; display: flex; align-items: center; gap: 12px; padding: 8px 18px; background: color-mix(in srgb, var(--formation), #10131a 55%); border: 1px solid color-mix(in srgb, var(--formation), white 30%); box-shadow: 0 5px 12px #0007; font-size: 25px; letter-spacing: .05em; }
+.formation.left { left: 20px; border-radius: 0 0 10px 0; }
+.formation.right { right: 20px; justify-content: flex-end; border-radius: 0 0 0 10px; }
+.formation-mark { width: 46px; height: 46px; border: 2px solid currentColor; border-radius: 7px; display: grid; place-items: center; overflow: hidden; flex: 0 0 auto; background: rgba(0, 0, 0, .22); }
+.formation-mark img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
