@@ -23,3 +23,26 @@ assert s['players'][0]['secondaries'][0]['score']==0
  const r=spawnSync(python,['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});
  assert.equal(r.status,0,r.stderr);
 });
+test('scrolled leading block assigns all five missions to the other player',()=>{
+ const python=findPython();assert.ok(python);
+ const code=`
+from battle_reader import parse
+from xml.etree.ElementTree import Element, SubElement, tostring
+for names in [('Alpha','Beta'),('Beta','Alpha')]:
+    root=Element('hierarchy')
+    def add(t):
+        return SubElement(root,'node',{'package':'com.goonhammer.ttba','content-desc':t})
+    add('45-29 '+names[0]+' vs '+names[1]);add('PRIMARY: 28/45');add('SECONDARY: 7/45')
+    for mission in ['Engage On All Fronts','Defend Stronghold','Outflank','A Grievous Blow','Cleanse']:
+        add(mission+'\\n0\\n/5\\n+0pts')
+    heading=add(names[1]);add('Round 4')
+    s=parse(tostring(root,encoding='unicode'))
+    assert len(s['players'][0]['secondaries'])==5
+    assert s['players'][1]['secondaries'] is None
+    root.remove(heading)
+    s=parse(tostring(root,encoding='unicode'))
+    assert all(p['secondaries'] is None for p in s['players'])
+`;
+ const r=spawnSync(python,['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});
+ assert.equal(r.status,0,r.stderr);
+});

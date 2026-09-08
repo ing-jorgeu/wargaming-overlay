@@ -13,7 +13,16 @@ def parse(xml):
     players = [dict(name=header[i+3], score=int(header[i+1]), cp=None, primary=None, secondary=None, secondaries=None, primaryObjectives=None) for i in range(2)]
     names = [p['name'] for p in players]
     if names[0] == names[1]: raise ValueError('Usa nombres distintos para identificar a los jugadores.')
+    # A scrolled two-player round can omit the first player's heading while
+    # exposing its scores/missions followed by the other player's heading.
+    # That next heading bounds the leading block and identifies its owner.
+    headings = [(i, t) for i, t in enumerate(texts) if t in names]
     current = None
+    if headings and len({name for _, name in headings}) == 1:
+        first_index, next_name = headings[0]
+        leading = texts[:first_index]
+        if any(re.fullmatch(r'(PRIMARY|SECONDARY):\s*\d+/\d+', t) for t in leading):
+            current = players[1 - names.index(next_name)]
     section = None
     for i, t in enumerate(texts):
         if t in names:
