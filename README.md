@@ -4,7 +4,7 @@ Overlay local para OBS con marcador, ronda, CP, primarias y secundarias leídos 
 
 **Paquete:** `@ing.jorgeu/wargaming-overlay` · **Comando:** `wargaming-overlay` · **Licencia del código:** 0BSD.
 
-El paquete está preparado para npm, pero no se ha publicado desde este proyecto. `@ing.jorgeu` debe corresponder a la cuenta u organización real que publique. Hasta entonces, instala desde el código fuente o un archivo `.tgz`.
+El paquete está publicado en [npm como @ing.jorgeu/wargaming-overlay](https://www.npmjs.com/package/@ing.jorgeu/wargaming-overlay). Para usarlo no necesitas clonar el repositorio. En macOS/Linux, si npm intenta escribir en una carpeta del sistema, usa la instalación en tu usuario que se explica abajo.
 
 ## Contenido
 
@@ -198,25 +198,95 @@ Ejemplo Windows:
 npm.cmd install -g "$HOME\Downloads\ing.jorgeu-wargaming-overlay-2.2.0.tgz"
 ```
 
-### C. Desde npm, después de publicarlo
+### C. Desde npm: versión publicada
+
+Puedes ejecutar esto desde cualquier carpeta:
 
 ```sh
 npm install -g @ing.jorgeu/wargaming-overlay
-```
-
-Ese comando requiere que el paquete ya exista en npm. Si el scope definitivo cambia, usa el nombre publicado. Un error 404 antes de publicar no significa que tu instalación de Node esté mal.
-
-### Evitar EACCES en macOS / Linux
-
-Puedes instalar en una carpeta de tu usuario, sin sudo:
-
-```sh
-npm install -g --prefix "$HOME/.local" .
-export PATH="$HOME/.local/bin:$PATH"
 wargaming-overlay --version
 ```
 
-Para conservar el PATH, añade la línea `export PATH` a `~/.zshrc` si usas zsh, o `~/.bashrc` si usas bash. Abre otra terminal. En esta modalidad, usa el mismo `--prefix "$HOME/.local"` al reinstalar o desinstalar. [Documentación npm install](https://docs.npmjs.com/cli/v8/commands/npm-install/).
+En Windows usa `npm.cmd` y `wargaming-overlay.cmd` si PowerShell bloquea los scripts `.ps1`.
+
+Si macOS/Linux responde con `EACCES: permission denied, mkdir '/usr/local/lib/node_modules/...'`, el paquete sí fue encontrado: falta permiso de escritura en la carpeta global de npm. Usa los siguientes pasos, sin sudo.
+
+### Instalación desde npm sin sudo en macOS / Linux
+
+1. Instala la versión publicada en tu carpeta de usuario:
+
+   ```sh
+   npm install -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay
+   ```
+
+2. Habilita el comando en la terminal actual y comprueba la instalación:
+
+   ```sh
+   export PATH="$HOME/.local/bin:$PATH"
+   wargaming-overlay --version
+   wargaming-overlay doctor
+   ```
+
+3. Para conservar PATH en nuevas terminales, abre el archivo de configuración de tu shell. En macOS con zsh:
+
+   ```sh
+   nano ~/.zshrc
+   ```
+
+   Si usas bash, abre `nano ~/.bashrc`. Añade esta línea solo si todavía no existe:
+
+   ```sh
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+
+   En nano guarda con Ctrl+O, Enter y sal con Ctrl+X. Abre una nueva terminal y comprueba:
+
+   ```sh
+   command -v wargaming-overlay
+   wargaming-overlay --version
+   ```
+
+   Con esta instalación, la ruta debería terminar en `.local/bin/wargaming-overlay`.
+
+4. Con el teléfono preparado, inicia:
+
+   ```sh
+   wargaming-overlay start
+   ```
+
+Si no quieres modificar PATH, también puedes ejecutar `"$HOME/.local/bin/wargaming-overlay" start` directamente.
+
+**Diferencia entre instalar desde npm y desde el repositorio:**
+
+| Comando | Origen |
+| --- | --- |
+| `npm install -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay` | Descarga el paquete publicado en npm. No vincula el comando a tu repositorio. |
+| `npm install -g --prefix "$HOME/.local" .` | Instala la carpeta actual; npm puede enlazarla al repositorio local. Debes estar en la carpeta del proyecto. |
+
+`--prefix` solo cambia el destino de esa operación; no modifica la configuración global de npm. Repite el mismo prefijo al actualizar o desinstalar:
+
+```sh
+npm install -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay@latest
+npm uninstall -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay
+```
+
+Son operaciones alternativas: ejecuta la primera para actualizar o la segunda para desinstalar, no ambas seguidas. La desinstalación conserva los datos de las partidas. [Documentación npm install](https://docs.npmjs.com/cli/v8/commands/npm-install/).
+
+### Si npm devuelve E404
+
+E404 significa que el registro no encuentra el paquete o que tu sesión no tiene acceso; no es un error de permisos de tu disco. Comprueba el nombre y consulta el registro público:
+
+```sh
+npm view @ing.jorgeu/wargaming-overlay version --registry=https://registry.npmjs.org/ --prefer-online
+```
+
+Si devuelve una versión, vuelve a instalar consultando información actualizada:
+
+```sh
+npm install -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay --prefer-online
+```
+
+Si la consulta sigue fallando, revisa `npm config get registry` y la [página del paquete](https://www.npmjs.com/package/@ing.jorgeu/wargaming-overlay). No publiques otra versión ni borres la caché solo para solucionar un E404 de instalación.
 
 ## Preparar el teléfono
 
@@ -399,8 +469,8 @@ Al cambiar de ronda no reutiliza CP ni misiones de la ronda anterior. Si consult
 | --- | --- |
 | `wargaming-overlay: command not found` | Comprueba la instalación con `npm list -g --depth=0`. Revisa PATH y abre otra terminal. En Unix, los ejecutables están bajo `bin` del prefijo mostrado por `npm prefix -g`; en Windows, en el propio prefijo. |
 | PowerShell bloquea un `.ps1` | Usa `npm.cmd` y `wargaming-overlay.cmd`. |
-| npm devuelve EACCES | Usa la instalación en `~/.local` descrita arriba. No inicies el servidor con sudo. |
-| npm devuelve 404 | El paquete puede no estar publicado o el scope ser distinto. Instala desde el código fuente o `.tgz`. |
+| npm devuelve EACCES | Ejecuta `npm install -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay` y añade `$HOME/.local/bin` a PATH siguiendo los pasos anteriores. |
+| npm devuelve 404 | Sigue la sección «Si npm devuelve E404»: comprueba nombre, registro y consulta con `--prefer-online`. |
 | ADB no encontrado | Ejecuta `setup --install-adb`, instala Platform-Tools o pasa `--adb` con la ruta completa. |
 | Python ausente/incompatible | Instala Python 3.8+ y usa `--python` si tienes varias instalaciones. En Windows prueba `py -3 --version`. |
 | No aparece ningún teléfono | Revisa cable de datos, puerto USB, desbloqueo y depuración USB. En Windows comprueba drivers. |
@@ -425,7 +495,7 @@ Detén el servidor con Ctrl+C antes de actualizar. Desde el código fuente actua
 npm install -g .
 ```
 
-Desde npm, cuando exista el paquete publicado:
+Desde npm:
 
 ```sh
 npm install -g @ing.jorgeu/wargaming-overlay@latest
