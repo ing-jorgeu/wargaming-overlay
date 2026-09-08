@@ -4,7 +4,7 @@ La versión 2.1.0 está empaquetada para distribución, pero NO se ha publicado 
 
 ## Pendiente de decidir
 
-- Nombre elegido: `@usuario/wargaming-overlay`. El scope `@usuario` debe pertenecer a la cuenta u organización que publica; si «usuario» es un ejemplo, sustitúyelo por el nombre real.
+- Nombre elegido: `@ing.jorgeu/wargaming-overlay`. Publicar con la cuenta npm `ing.jorgeu`, confirmada por el titular.
 - Licencia del código resuelta: **0BSD**, seleccionada por el usuario. Permite uso comercial, modificación y redistribución sin atribución obligatoria. Las imágenes requieren revisión por separado.
 - Revisar la procedencia y permiso de redistribución de los recursos visuales; ver `THIRD_PARTY_ASSETS.md`.
 - Añadir `repository`, `homepage`, `bugs` y `author` cuando se conozcan. No se han inventado datos personales ni URLs.
@@ -19,7 +19,7 @@ npm test
 npm pack --dry-run
 npm login
 npm whoami
-npm view @usuario/wargaming-overlay name version
+npm view @ing.jorgeu/wargaming-overlay name version
 npm publish --dry-run
 npm publish --access public
 ```

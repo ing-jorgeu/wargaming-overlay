@@ -2,9 +2,9 @@
 
 Overlay local para OBS con marcador, ronda, CP, primarias y secundarias leídos de un teléfono Android. Incluye panel de configuración, vínculo de jugadores por nombre, indicadores de misión cumplida, persistencia de la partida y botón para restablecer los datos.
 
-**Paquete:** `@usuario/wargaming-overlay` · **Comando:** `wargaming-overlay` · **Licencia del código:** 0BSD.
+**Paquete:** `@ing.jorgeu/wargaming-overlay` · **Comando:** `wargaming-overlay` · **Licencia del código:** 0BSD.
 
-El paquete está preparado para npm, pero no se ha publicado desde este proyecto. `@usuario` debe corresponder a la cuenta u organización real que publique. Hasta entonces, instala desde el código fuente o un archivo `.tgz`.
+El paquete está preparado para npm, pero no se ha publicado desde este proyecto. `@ing.jorgeu` debe corresponder a la cuenta u organización real que publique. Hasta entonces, instala desde el código fuente o un archivo `.tgz`.
 
 ## Contenido
 
@@ -189,19 +189,19 @@ npm start
 Sustituye la ruta por la del archivo que recibiste:
 
 ```sh
-npm install -g "/ruta/usuario-wargaming-overlay-2.2.0.tgz"
+npm install -g "/ruta/ing.jorgeu-wargaming-overlay-2.2.0.tgz"
 ```
 
 Ejemplo Windows:
 
 ```powershell
-npm.cmd install -g "$HOME\Downloads\usuario-wargaming-overlay-2.2.0.tgz"
+npm.cmd install -g "$HOME\Downloads\ing.jorgeu-wargaming-overlay-2.2.0.tgz"
 ```
 
 ### C. Desde npm, después de publicarlo
 
 ```sh
-npm install -g @usuario/wargaming-overlay
+npm install -g @ing.jorgeu/wargaming-overlay
 ```
 
 Ese comando requiere que el paquete ya exista en npm. Si el scope definitivo cambia, usa el nombre publicado. Un error 404 antes de publicar no significa que tu instalación de Node esté mal.
@@ -428,7 +428,7 @@ npm install -g .
 Desde npm, cuando exista el paquete publicado:
 
 ```sh
-npm install -g @usuario/wargaming-overlay@latest
+npm install -g @ing.jorgeu/wargaming-overlay@latest
 ```
 
 Si usaste un prefijo de usuario, repite `--prefix "$HOME/.local"`. Después inicia otra vez y refresca la fuente en OBS.
@@ -436,13 +436,13 @@ Si usaste un prefijo de usuario, repite `--prefix "$HOME/.local"`. Después inic
 Para desinstalar el CLI:
 
 ```sh
-npm uninstall -g @usuario/wargaming-overlay
+npm uninstall -g @ing.jorgeu/wargaming-overlay
 ```
 
 O, con el prefijo de usuario:
 
 ```sh
-npm uninstall -g --prefix "$HOME/.local" @usuario/wargaming-overlay
+npm uninstall -g --prefix "$HOME/.local" @ing.jorgeu/wargaming-overlay
 ```
 
 La desinstalación no borra tus archivos de partida ni desinstala ADB, Python u OBS. Puedes conservar la carpeta de datos como respaldo.

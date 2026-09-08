@@ -1,5 +1,5 @@
 {
-  "name": "@usuario/wargaming-overlay",
+  "name": "@ing.jorgeu/wargaming-overlay",
   "version": "2.2.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
