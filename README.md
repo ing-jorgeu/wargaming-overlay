@@ -316,7 +316,7 @@ Si la consulta sigue fallando, revisa `npm config get registry` y la [página de
    ```
 
 4. Abre el panel en [http://127.0.0.1:8765](http://127.0.0.1:8765).
-5. Configura título, nombres, facciones, disposiciones y destacamentos. Si el nombre visible del overlay es distinto al de la app, completa **Nombre en la app** para cada jugador. Pulsa **Actualizar overlay**.
+5. Configura título, nombres, facciones, disposiciones y destacamentos. Si el nombre visible del overlay es distinto al de la app, completa **Nombre en la app** para cada jugador. Pulsa **Actualizar overlay**. Para cambiar de lado, pulsa **Intercambiar jugadores ⇄**: guarda también los cambios pendientes del formulario e intercambia ambos jugadores completos. Los VP, CP y misiones siguen vinculados por nombre; el cambio se refleja al instante en OBS y se conserva al reiniciar.
 6. En OBS añade una fuente **Navegador**, desmarca **Archivo local** y usa:
 
    ```text
@@ -461,7 +461,7 @@ El botón **Restablecer datos de la partida** vacía los puntos y misiones guard
 
 Solo lee lo visible. Un bloque sin nombre de jugador se ignora para evitar asignaciones incorrectas. Los datos conservados pueden haber cambiado fuera de pantalla y las listas de misiones pueden ser parciales. No interpreta una lista ausente como lista vacía.
 
-Al cambiar de ronda no reutiliza CP ni misiones de la ronda anterior. Si consultas una ronda histórica en el teléfono, mostrará esa ronda. No infiere TOP/BOTTOM ni quién está jugando por el puntaje. El nombre general de la primaria no siempre está expuesto; se muestran sus condiciones de puntuación.
+Al cambiar de ronda no reutiliza CP ni misiones de la ronda anterior. Si consultas una ronda histórica en el teléfono, mostrará esa ronda. TOP/BOTTOM se infiere automáticamente al observar aumentos de puntuación o cambios de objetivos previamente leídos. No requiere seleccionar el turno en el panel. El orden se aprende a partir de la primera actividad observada tras una ronda nueva, o desde una partida observada en ronda 1 con ambos marcadores en cero. Si conectas a mitad de partida, puede quedar sin indicar hasta la siguiente ronda. La detección se guarda al reiniciar y es independiente del intercambio de lados. Es una estimación: puntos registrados fuera de turno o correcciones al alza pueden confundirla. No interpreta misiones que aparecen por primera vez al desplazar la pantalla como cartas recién robadas. Bajar puntos o gastar CP no cambia el turno; cambios simultáneos en ambos jugadores lo conservan. El nombre general de la primaria no siempre está expuesto; se muestran sus condiciones de puntuación.
 
 ## Solución de problemas
 
@@ -539,3 +539,89 @@ Consulta [PUBLISHING.md](PUBLISHING.md) para autenticarte y publicar. `npm publi
 El código se distribuye bajo **[0BSD](LICENSE)**, una licencia permisiva que permite uso comercial, modificación y redistribución sin atribución obligatoria y sin garantías. [Texto oficial](https://opensource.org/license/0bsd).
 
 Se conservan las imágenes del overlay. Su procedencia y derechos se documentan por separado en [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md); la licencia del código no concede derechos adicionales sobre recursos de terceros. El proyecto no declara afiliación oficial con las aplicaciones o juegos a los que hace referencia.
+
+## Caché local de estadísticas de Listhammer
+
+Al iniciar el servidor con `wargaming-overlay start` o `npm start`, se descargan en segundo plano los datos públicos de [Listhammer Stats](https://listhammer.info/stats) y las páginas de las facciones presentes en su tabla. No requiere dependencias nuevas, cuenta ni configuración. La lectura del teléfono y OBS arrancan sin esperar esta descarga.
+
+Se guarda `listhammer-stats.json` en la misma [carpeta de datos](#ubicación-de-los-datos) que `game-state.json`; `--data-dir` también cambia ese destino. En macOS, por defecto:
+
+```text
+~/Library/Application Support/wargaming-overlay/listhammer-stats.json
+```
+
+El JSON contiene:
+
+- `factions`: victorias, derrotas, partidas, porcentaje de victorias, jugadores y demás agregados por facción.
+- `dispositions.overall` y `dispositions.matchups`: resultados por disposición y contra cada disposición rival.
+- `factionDetails`: resultados de cada facción contra las facciones rivales (`matchups`), diferencial de puntos y estadísticas y tamaño de muestra jugando primero cuando la fuente los ofrece. Incluye también el histórico semanal y los agregados de la página.
+- `sourceUrl`, `fetchedAt`, `schemaVersion` y `selection`: procedencia, fecha de descarga, versión del formato, período y filtros.
+
+Se recoge la selección inicial del sitio: **This Weekend**, sin RTTs; actualmente partidas de 40k de 11.ª edición, 2000 puntos, eventos de al menos 5 rondas y 16 jugadores, excluyendo enfrentamientos espejo. `headline` y `matchups` corresponden al período indicado; `overall` de cada facción es su histórico general y `weekly` distingue las semanas. Se conservan los porcentajes tal como los entrega Listhammer (cadenas, escala 0–100) y sus tamaños de muestra: un cero con cero partidas no representa una tasa observada. No se guardan nombres de jugadores ni sus listas.
+
+La descarga es secuencial, con una pausa de 250 ms entre facciones y un límite de 20 segundos por petición. Se realiza una vez en cada arranque, sin consultas periódicas durante la emisión. La consola informa al terminar e indica la ruta guardada.
+
+Si falta internet, el sitio devuelve un error o cambia de formato, aparece un aviso y se conserva la última copia completa. Si es el primer arranque y falla, aún no habrá archivo. Para reintentar, reinicia el servidor. El reemplazo es atómico y solo ocurre después de validar todas las facciones y comprobar que sus resultados y períodos coinciden con la tabla principal.
+
+Estos datos alimentan los avisos opcionales descritos abajo. El archivo completo no tiene una ruta HTTP pública. Restablecer la partida no borra esta caché. No se incluyen copias descargadas en el paquete npm. La disponibilidad y los datos dependen de Listhammer; la licencia del código no concede derechos sobre sus datos.
+
+
+## Mensajes, curiosidades y estadísticas en pantalla
+
+En el panel encontrarás **Mensajes en pantalla**. Los avisos aparecen en la parte inferior de `overlay-art.html`, sobre una franja oscura translúcida, durante **15 segundos**. Se escalan junto con el diseño original de 1440p para todas las resoluciones compatibles.
+
+1. Elige las facciones y disposiciones de ambos jugadores y pulsa **Actualizar overlay**. Se usan esas selecciones guardadas, no el nombre del jugador, para escoger las curiosidades y estadísticas.
+2. Para un aviso propio, escribe hasta 280 caracteres y pulsa **Mostrar mensaje · 15 s**. Por ejemplo: `¡Bienvenidos! La siguiente ronda comienza en unos minutos.` Los mensajes son texto plano; los saltos de línea se convierten en espacios.
+3. Activa **Mostrar un dato cada 2 minutos** para iniciar la rotación. El primer aviso automático aparece después de dos minutos. Puedes incluir **Curiosidades de las facciones**, **Estadísticas y enfrentamiento actual**, o ambas. Las opciones se guardan de inmediato, sin pulsar Actualizar overlay.
+4. **Mostrar siguiente dato** adelanta la rotación incluso cuando el modo automático está pausado. Cada pulsación reemplaza el aviso actual y usa el mismo historial que la rotación automática.
+5. Al empezar otra transmisión, pulsa **Nueva sesión de mensajes** para reiniciar el historial. No modifica jugadores, puntos, misiones ni la caché de estadísticas.
+
+Un mensaje manual reemplaza cualquier aviso visible, no consume curiosidades y deja dos minutos hasta el siguiente aviso automático. Los avisos automáticos solo consumen datos cuando hay al menos una fuente del overlay conectada; tener únicamente el panel abierto no consume la rotación. Varias fuentes de OBS reciben el mismo aviso, sin crear temporizadores independientes. Si OBS se reconecta mientras hay un aviso, recibe solo el tiempo restante de sus 15 segundos.
+
+### Selección y repetición
+
+El catálogo contiene **764 curiosidades aprobadas en español para las 28 facciones**, con al menos 20 por facción. Solo incluye entradas auditadas; cada una conserva su enlace y fecha de revisión. Genestealer Cults dispone de 32 y Thousand Sons de 20: juntas ofrecen 52 curiosidades, más las estadísticas disponibles. Custom no tiene curiosidades inventadas.
+
+El orden es aleatorio, con más peso para las estadísticas del enfrentamiento actual. Cada dato aparece una vez por ciclo. Al completar la lista empieza otro ciclo automáticamente, sin repetir inmediatamente el último dato si hay alternativas. El botón «Mostrar siguiente dato» también inicia el siguiente ciclo. Las partidas espejo usan una sola copia del catálogo de su facción. El panel separa curiosidades y estadísticas, e indica el ciclo y los datos pendientes. La cobertura mostrada es el tiempo hasta completar el ciclo; la rotación puede continuar indefinidamente.
+
+El historial y las opciones se guardan en `toast-session.json`, dentro de la carpeta de datos (`--data-dir`). Recargar el panel, refrescar OBS, pausar la rotación o reiniciar el servidor no reinicia ese historial. «Nueva sesión de mensajes» es independiente de «Restablecer datos de la partida».
+
+### Qué estadísticas se muestran
+
+La caché local de Listhammer proporciona porcentajes generales de las facciones elegidas, resultados entre ambas facciones, diferencial de puntos y resultados jugando primero cuando hay al menos 10 partidas para esos dos últimos indicadores. También aparecen las disposiciones seleccionadas y su enfrentamiento: se identifican expresamente como resultados **entre todas las facciones**, no como estadísticas particulares de los jugadores.
+
+Cada aviso estadístico incluye período, fecha de la copia y número de partidas. Una tasa con menos de 10 partidas se marca como **muestra pequeña**. Los resultados con cero partidas se omiten. No se calcula una probabilidad de victoria para esta partida ni se inventa un 50 % para enfrentamientos espejo. Los nombres equivalentes del selector y Listhammer se reconocen, por ejemplo Space Marines / Space Marines (Astartes), Agents of the Imperium / Imperial Agents y Genestealer Cults / Genestealer Cult.
+
+No se consulta internet cada dos minutos: las curiosidades vienen incluidas con el paquete y los avisos de estadísticas usan la copia descargada al arrancar. Si Listhammer falla, se utiliza la última copia disponible indicando su fecha. Sin ninguna copia, continúan las curiosidades habilitadas y el panel avisa de que las estadísticas no están disponibles. Las pruebas usan un reloj simulado para verificar la cadencia, la expiración y la ausencia de repeticiones dentro de cada ciclo y continuidad entre ciclos, además de probar los endpoints y la entrega de eventos.
+
+### Si no aparece un aviso
+
+- Reinicia el servidor con esta versión del código y refresca el panel y la fuente Navegador de OBS. La fuente debe apuntar a `/overlay-art.html` en el mismo puerto que el panel.
+- Si ejecutas una instalación global anterior, los cambios del repositorio no la actualizan automáticamente: reinstala esa versión o prueba con `npm start` desde el repositorio.
+- Comprueba que guardaste las facciones, que hay contenido habilitado y que el panel muestra datos disponibles. El botón «Mostrar siguiente dato» permite comprobarlo sin esperar dos minutos.
+- «Nueva sesión» borra solo el historial de avisos, no las estadísticas descargadas.
+
+
+### Correspondencia de facciones y cobertura de una transmisión
+
+El selector y los mensajes usan el mismo registro, `public/factions.json`. Las equivalencias de `factions.js` traducen **Space Marines (Astartes) → Space Marines**, **Imperial Agents → Agents of the Imperium** y **Genestealer Cult → Genestealer Cults**. Se toleran diferencias de mayúsculas, espacios y puntuación. Los capítulos se mantienen separados: Blood Angels no recibe estadísticas de Space Marines. Los nombres desconocidos se señalan en el panel y no reciben contenido de otra facción por semejanza.
+
+Las estadísticas de un enfrentamiento se toman desde la perspectiva de la facción indicada en el texto. No se calcula el porcentaje del contrario restándolo de 100. Las disposiciones globales se identifican como datos de todas las facciones.
+
+A un aviso cada dos minutos, cuatro horas requieren **120 datos distintos**. Para garantizar esa duración con solo curiosidades en cualquier combinación, incluidas partidas espejo, hacen falta 120 por facción. **Esa ampliación general todavía está pendiente**: Adepta Sororitas y Tyranids ya tienen 120 curiosidades por facción y cubren incluso partidas espejo durante 240 minutos. El catálogo actual cubre Aeldari vs Chaos Daemons durante 248 minutos, pero un espejo de cualquiera de ellas cubre 124 minutos y otras combinaciones tienen menos contenido. Las estadísticas disponibles pueden aumentar la duración; no se cuentan como una garantía porque dependen de la copia local de Listhammer.
+
+El panel muestra el número de datos aún no vistos y su duración a intervalos de dos minutos. Advierte si no quedan cuatro horas. Usar «Mostrar siguiente dato» consume una entrada y reduce esa cobertura; los mensajes manuales no la consumen. La estimación presupone que mantienes las facciones y opciones seleccionadas.
+
+Para revisar el catálogo desde el repositorio:
+
+```sh
+npm run facts:coverage
+```
+
+Para exigir cuatro horas incluso en partidas espejo (termina con código 1 mientras falten curiosidades):
+
+```sh
+npm run facts:coverage -- --require-four-hours
+```
+
+Al ampliar `data/faction-facts.json`, usa el nombre exacto del registro, conserva los IDs existentes para respetar el historial y asigna un ID estable a cada nueva curiosidad. Incluye un enlace específico, título de fuente y fecha de revisión. No añadas reformulaciones del mismo dato para aumentar artificialmente la duración.

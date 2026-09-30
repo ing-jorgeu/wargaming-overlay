@@ -1,13 +1,11 @@
 (() => {
- const normalize=s=>(s||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();
  const make=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text;if(cls)n.className=cls;return n};
  const panel=make('section','','live-score');document.querySelector('#overlay-stage').append(panel);
  let settings=null,game=null;
  function renderLive(){
   panel.replaceChildren();if(!settings)return;
-  const matches=['left','right'].map(side=>{const key=normalize(settings[side].appName||settings[side].name);const found=(game?.players||[]).filter(p=>normalize(p.name)===key);return found.length===1?found[0]:null});
-  if(matches[0]===matches[1])matches.fill(null);
-  const round=make('div',matches.every(Boolean)?`RONDA ${game.round}`:'RONDA —','live-round');panel.append(round);
+  const matches=MatchView.matchPlayers(settings,game);
+  const round=make('div',MatchView.roundLabel(settings,game,matches.every(Boolean)),'live-round');panel.append(round);
   ['left','right'].forEach((side,i)=>{
    const p=matches[i],card=make('article','',`live-player ${side}`);
    const value=v=>v==null?'—':typeof v==='object'?`${v.score}/${v.max}`:v;

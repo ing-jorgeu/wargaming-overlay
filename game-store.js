@@ -1,3 +1,4 @@
+const {inferTurn}=require('./turn-tracker');
 const emptyGame=()=>({players:[],connected:false,updatedAt:null,error:null});
 function mergeGame(previous,incoming){
  if(!incoming.connected || !Array.isArray(incoming.players) || incoming.players.length!==2)
@@ -12,6 +13,8 @@ function mergeGame(previous,incoming){
   }
   return merged;
  });
- return {...incoming,players};
+ const samePlayers=previous.players?.length===2 && incoming.players.every(p=>previous.players.some(old=>old.name===p.name));
+ const turn=inferTurn(previous,incoming,samePlayers);
+ return {...incoming,players,turn,half:incoming.round===turn.highestRound?turn.half:null};
 }
 module.exports={emptyGame,mergeGame};

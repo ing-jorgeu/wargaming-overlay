@@ -8,7 +8,8 @@
   "scripts": {
     "start": "node cli.js start",
     "test": "node --test",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "facts:coverage": "node scripts/fact-coverage.js"
   },
   "engines": {
     "node": ">=20"
@@ -20,12 +21,18 @@
     "reader.py",
     "battle_reader.py",
     "game-store.js",
+    "turn-tracker.js",
     "public",
     "README.md",
     "platform.js",
     "PUBLISHING.md",
     "THIRD_PARTY_ASSETS.md",
-    "LICENSE"
+    "LICENSE",
+    "listhammer.js",
+    "announcements.js",
+    "data/faction-facts.json",
+    "factions.js",
+    "scripts/fact-coverage.js"
   ],
   "license": "0BSD",
   "publishConfig": {

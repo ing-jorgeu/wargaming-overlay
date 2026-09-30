@@ -1,0 +1,61 @@
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const {spawn} = require('node:child_process');
+const {once} = require('node:events');
+test('HTTP and SSE deliver plain text, validate input and share one fact history', {timeout:15000}, async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(),'overlay-toast-http-'));
+  const repo = path.resolve(__dirname,'..');
+  const preload = path.join(directory,'preload.cjs');
+  await fs.writeFile(preload, `
+    const http=require('node:http'), original=http.createServer;
+    http.createServer=(...args)=>{const server=original(...args);server.on('listening',()=>console.log('TEST_PORT='+server.address().port));return server;};
+    require('node:child_process').spawn=()=>{const child=new (require('node:events').EventEmitter)();child.stdout=new (require('node:stream').PassThrough)();child.kill=()=>{};return child;};
+    require(${JSON.stringify(path.join(repo,'listhammer.js'))}).syncStats=async()=>null;
+  `);
+  const child=spawn(process.execPath,['--require',preload,path.join(repo,'server.js')],{env:{...process.env,PORT:'0',OVERLAY_DATA_DIR:directory},stdio:['ignore','pipe','pipe']});
+  t.after(async()=>{if(child.exitCode===null){child.kill();await once(child,'exit');}await fs.rm(directory,{recursive:true,force:true});});
+  let output='', errors='';
+  child.stderr.on('data',c=>{errors+=c;});
+  const port=await new Promise((resolve,reject)=>{
+    child.stdout.on('data',c=>{output+=c;const m=/TEST_PORT=(\d+)/.exec(output);if(m)resolve(m[1]);});
+    child.on('error',reject);child.on('exit',code=>reject(new Error('Server exited '+code+'\n'+errors)));
+  });
+  const base='http://127.0.0.1:'+port;
+  const registry=await (await fetch(base+'/factions.json')).json();
+  assert.deepEqual(registry,require('../public/factions.json'));
+  assert.equal(Object.values(registry).flat().filter(n=>n!=='Custom').length,28);
+  const stream=await fetch(base+'/toasts/events',{signal:AbortSignal.timeout(10000)});
+  const reader=stream.body.getReader();t.after(()=>reader.cancel().catch(()=>{}));
+  await reader.read();
+  const post=(route,body={})=>fetch(base+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const text='Texto <img src=x onerror=alert(1)> — ¿Sabías qué?';
+  const sent=await (await post('/toasts/message',{text})).json();
+  assert.equal(sent.toast.text,text);assert.ok(sent.toast.remainingMs > 0 && sent.toast.remainingMs <= 15000);
+  let event='';while(!event.includes(text))event+=Buffer.from((await reader.read()).value).toString('utf8');
+  assert.ok(event.includes('event: toast'));assert.ok(event.includes(sent.toast.token));
+  assert.equal((await post('/toasts/message',{text:'x'.repeat(281)})).status,400);
+  assert.equal((await post('/toasts/config',{enabled:'yes'})).status,400);
+  const a=await (await post('/toasts/next')).json();const b=await (await post('/toasts/next')).json();assert.notEqual(a.toast.id,b.toast.id);
+  const state=await (await fetch(base+'/toasts/state')).json();assert.equal(state.remaining,state.total-2);
+  const disk=JSON.parse(await fs.readFile(path.join(directory,'toast-session.json'),'utf8'));assert.equal(disk.seen.length,2);
+  assert.equal((await fetch(base+'/toasts/message')).status,405);
+  await post('/toasts/reset');assert.equal((await (await fetch(base+'/toasts/state')).json()).remaining,state.total);
+  // Layout changes persist as one unit and reach already-connected OBS clients.
+  const layoutStream=await fetch(base+'/events',{signal:AbortSignal.timeout(10000)});
+  const layoutReader=layoutStream.body.getReader();t.after(()=>layoutReader.cancel().catch(()=>{}));
+  await layoutReader.read();
+  const layout={title:'Mesa 1',roundHalf:'bottom',left:{name:'Ana',appName:'alpha',faction:'Orks',formation:'Take and Hold',detachments:['Uno','Dos']},right:{name:'Luis',appName:'beta',faction:'Necrons',formation:'Reconnaissance',detachments:['Tres']}};
+  const swapped=require('../public/match-view').swapPlayers(layout);
+  assert.equal((await post('/state',swapped)).status,200);
+  const frame=Buffer.from((await layoutReader.read()).value).toString('utf8');
+  assert.deepEqual(JSON.parse(frame.match(/data: (.*)/)[1]),swapped);
+  assert.deepEqual(await (await fetch(base+'/state')).json(),swapped);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory,'overlay-state.json'),'utf8')),swapped);
+  await post('/game/reset');
+  const reset=await (await fetch(base+'/state')).json();
+  assert.equal(reset.roundHalf,'');assert.deepEqual(reset.left,swapped.left);assert.deepEqual(reset.right,swapped.right);
+
+});

@@ -1,0 +1,14 @@
+.stream-toast {
+  position: absolute; bottom: 64px; left: 50%; width: 1880px; max-width: calc(100% - 160px);
+  transform: translate(-50%, 14px); opacity: 0; visibility: hidden; pointer-events: none; z-index: 100;
+  padding: 26px 38px 28px; border: 1px solid rgba(234,223,199,.27); border-left: 5px solid #dfb762;
+  border-radius: 14px; background: rgba(12,18,26,.82); box-shadow: 0 10px 30px #0004;
+  color: #fff; text-transform: none; font-family: Arial, sans-serif; font-weight: 400;
+  transition: opacity .3s ease, transform .3s ease, visibility .3s;
+}
+.stream-toast.is-visible { opacity: 1; visibility: visible; transform: translate(-50%,0); }
+.toast-heading { color: #e8bf70; font-size: 27px; line-height: 1.2; font-weight: 700; letter-spacing: .035em; }
+#toast-text { font-size: 42px; line-height: 1.26; font-weight: 600; margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; text-shadow: 0 2px 3px #0008; }
+.toast-footer { color: #d2d7df; font-size: 24px; line-height: 1.25; margin-top: 14px; }
+.toast-footer:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .stream-toast { transition: none; } }
