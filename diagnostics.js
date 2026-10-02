@@ -33,6 +33,12 @@ function check(options={}){
  if(py.status!==0)return {ok:false,code:'PYTHON_VERSION',message:'Se necesita Python 3.8 o posterior. Usa --python /ruta/a/python3.',adb,python};
  const result=spawnSync(adb,['devices','-l'],{encoding:'utf8',timeout:15000});
  if(result.error||result.status!==0)return {ok:false,code:'ADB_ERROR',message:'ADB no pudo consultar el teléfono: '+(result.error?.message||(result.stderr||'').trim()).slice(0,600),adb,python};
- return {...deviceStatus(result.stdout,options.serial),adb,python};
+ let status=deviceStatus(result.stdout,options.serial);
+ // USB and wireless transports can be the same physical phone.
+ if(status.code==='MULTIPLE_DEVICES'){
+  const probe=spawnSync(python,['-c', 'import json; from device_connection import DeviceConnection; print(json.dumps(DeviceConnection().select()))'],{cwd:__dirname,env:{...process.env,OVERLAY_ADB:adb},encoding:'utf8',timeout:20000,windowsHide:true});
+  if(probe.status===0){try{const d=JSON.parse(probe.stdout);status={ok:true,code:'READY',message:'Teléfono conectado por '+(d.transport==='wifi'?'Wi-Fi.':'USB.'),serial:d.serial};}catch{}}
+ }
+ return {...status,adb,python};
 }
 module.exports={locate,deviceStatus,check,findPython};

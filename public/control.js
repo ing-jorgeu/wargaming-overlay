@@ -47,7 +47,7 @@ document.querySelector('#reset-game').addEventListener('click',async()=>{
  catch {document.querySelector('#reset-status').textContent='No se pudo restablecer. Comprueba que el servidor esté actualizado y funcionando.';}
  finally{button.disabled=false}
 });
-async function phoneStatus(){try{const r=await fetch('/game-state.json',{cache:'no-store'});const g=await r.json();document.querySelector('#turn-status').textContent=(g.half==='top'?'TOP · Primer turno. ':g.half==='bottom'?'BOTTOM · Segundo turno. ':'Turno automático: ')+(g.turn?.reason||'Esperando actividad de puntuación.');document.querySelector('#phone-status').textContent=g.connected?'Teléfono conectado.':(g.error||'Sin conexión.')+(g.players?.length?' Se conserva la última lectura.':'');}catch{document.querySelector('#phone-status').textContent='Servidor no disponible.'}finally{setTimeout(phoneStatus,3000)}}phoneStatus();
+async function phoneStatus(){try{const r=await fetch('/game-state.json',{cache:'no-store'});const g=await r.json();document.querySelector('#turn-status').textContent=(g.half==='top'?'TOP · Primer turno. ':g.half==='bottom'?'BOTTOM · Segundo turno. ':'Turno automático: ')+(g.turn?.reason||'Esperando actividad de puntuación.');document.querySelector('#phone-status').textContent=g.connected?`Teléfono conectado por ${g.transport==='wifi'?'Wi-Fi':'USB'}.`:(g.phoneConnected?`Teléfono conectado por ${g.transport==='wifi'?'Wi-Fi':'USB'}. `:'')+(g.error||'Reconectando…')+(g.players?.length?' Se conserva la última lectura.':'');}catch{document.querySelector('#phone-status').textContent='Servidor no disponible.'}finally{setTimeout(phoneStatus,3000)}}phoneStatus();
 
 document.querySelector('#obs-url').textContent=location.origin+'/overlay-art.html';
 

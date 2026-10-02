@@ -2,7 +2,7 @@ const {inferTurn}=require('./turn-tracker');
 const emptyGame=()=>({players:[],connected:false,updatedAt:null,error:null});
 function mergeGame(previous,incoming){
  if(!incoming.connected || !Array.isArray(incoming.players) || incoming.players.length!==2)
-  return {...previous,connected:false,error:incoming.error||'Sin lectura válida'};
+  return {...previous,connected:false,phoneConnected:incoming.phoneConnected===true,transport:incoming.transport||null,error:incoming.error||'Sin lectura válida'};
  const same=previous.round===incoming.round && previous.players?.length===2 && incoming.players.every(p=>previous.players.some(old=>old.name===p.name));
  const players=incoming.players.map(p=>{
   const old=same?previous.players.find(old=>old.name===p.name):null;

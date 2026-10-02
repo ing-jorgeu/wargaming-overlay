@@ -625,3 +625,11 @@ npm run facts:coverage -- --require-four-hours
 ```
 
 Al ampliar `data/faction-facts.json`, usa el nombre exacto del registro, conserva los IDs existentes para respetar el historial y asigna un ID estable a cada nueva curiosidad. Incluye un enlace específico, título de fuente y fecha de revisión. No añadas reformulaciones del mismo dato para aumentar artificialmente la duración.
+
+### Continuidad entre USB y Wi-Fi
+
+El lector recuerda el teléfono por su identificador físico en `phone-connection.json`, dentro de la carpeta de datos. Si ADB presenta USB y Wi-Fi para ese mismo teléfono, el overlay prefiere USB. Al retirar el cable, utiliza la conexión inalámbrica autorizada; al reconectarlo, vuelve a USB. Nunca elige otro teléfono por compartir el modelo o una dirección IP anterior.
+
+Activa la depuración inalámbrica y empareja el computador con el teléfono en Android. Tener activada la opción no equivale a estar emparejado. ADB debe poder descubrir el teléfono en la red. Si el descubrimiento no funciona, conecta previamente con `adb connect IP:PUERTO` usando la dirección que Android muestra en Depuración inalámbrica. El overlay puede recuperar direcciones conocidas y servicios inalámbricos que anuncien el identificador del teléfono guardado; no activa puertos de depuración ni empareja dispositivos desconocidos automáticamente.
+
+Para elegir otro teléfono, inicia con `--serial SERIAL` usando su identificador de `adb devices -l`. Si hay varios teléfonos diferentes y ninguno seleccionado, el lector pide seleccionar uno. El panel distingue conexión USB, Wi-Fi y espera de una ronda legible. Al enviar Tabletop Battles al fondo se conserva el último marcador; al volver a la ronda, la lectura se reanuda. Durante una reconexión puede haber una pausa de unos segundos.
