@@ -92,5 +92,5 @@ test('partial card history survives scrolling, disappearance and restart',()=>{
  g=mergeGame(g,reading(1,0,0,{secondaries:[{name:'New',score:0}]}));
  assert.equal(g.half,'top');assert.deepEqual(g.turn.cards.A,['Known','New']);
  g=mergeGame(g,reading(2,0,0,{secondaries:[{name:'Known',score:0}]}));
- assert.equal(g.half,null);assert.deepEqual(g.turn.cards.A,['Known']);
+ assert.equal(g.half,null);assert.deepEqual(g.turn.cards.A,['Known','New']);
 });

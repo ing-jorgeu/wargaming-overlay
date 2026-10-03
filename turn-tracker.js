@@ -17,7 +17,7 @@ function inferTurn(previous, incoming, samePlayers) {
    const names=[...new Set(p.secondaries.map(m=>m.name))];
    const prior=t.cards[p.name];
    const known=Array.isArray(prior)?prior:[];
-   const added=p.secondaries.filter(m=>!known.includes(m.name));
+   const added=p.secondaries.filter(m=>m.enabled!==false && !known.includes(m.name));
    // A complete baseline proves an addition. Otherwise a new zero-point card is
    // useful evidence, including the first visible BOTTOM card after TOP played.
    if(t.cardBaselines?.[p.name] && added.length)activity=true;
@@ -31,8 +31,9 @@ function inferTurn(previous, incoming, samePlayers) {
   const values={};
   for(const key of ['primary','secondary']) if(Number.isFinite(p[key]?.score))values[key]=p[key].score;
   if(Number.isFinite(p.score))values.score=p.score;
-  for(const m of p.secondaries||[])if(Number.isFinite(m.score))values[`mission:${m.name}`]=m.score;
+  for(const m of p.secondaries||[])if(m.enabled!==false && Number.isFinite(m.score))values[`mission:${m.name}`]=m.score;
   for(const m of p.primaryObjectives||[]){
+   if(m.enabled===false)continue;
    if(m.checked!=null)values[`checked:${m.name}`]=Number(m.checked);
    if(Number.isFinite(m.counter))values[`counter:${m.name}`]=m.counter;
   }

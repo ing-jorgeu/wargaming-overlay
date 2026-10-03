@@ -62,3 +62,39 @@ tab.set('bounds','[0,260][100,300]');s=parse(tostring(r,encoding='unicode'));ass
 `;
  const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
 });
+test('disabled mission state follows Android and can become enabled',()=>{
+ const code=`
+from battle_reader import parse
+from xml.etree.ElementTree import Element,SubElement,tostring
+r=Element('hierarchy')
+def add(t,**attrs): return SubElement(r,'node',{'package':'com.goonhammer.ttba','content-desc':t,**attrs})
+add('10-10 A vs B');add('A');add('PRIMARY: 0/45')
+a=add('Control Central\\n2VP | End of Your Turn',enabled='true')
+b=add('Control Central\\n8VP | End of Your Command Phase',enabled='false')
+c=add('Control Home\\n10VP | End of the Battle',enabled='false')
+add('SECONDARY: 0/45');add('Unavailable\\n0\\n/5',enabled='false');add('Round 1')
+s=parse(tostring(r,encoding='unicode'))['players'][0]
+assert [m['enabled'] for m in s['primaryObjectives']]==[True,False,False]
+assert s['secondaries'][0]['enabled'] is False
+b.set('enabled','true')
+s=parse(tostring(r,encoding='unicode'))['players'][0]
+assert s['primaryObjectives'][1]['enabled'] is True
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+});
+test('split primary counters accept rule before label without inventing numeric objectives',()=>{
+ const code=`
+from battle_reader import parse
+from xml.etree.ElementTree import Element,SubElement,tostring
+for value in [0,3]:
+ r=Element('hierarchy')
+ def add(t): return SubElement(r,'node',{'package':'com.goonhammer.ttba','content-desc':t,'enabled':'true'})
+ for t in ['10-10 A vs B','A','PRIMARY: 0/45','Control Central\\n2VP | End of Your Turn','1VP | End of Your Turn','Markers on Controlled Objectives',str(value),'2VP | End of Your Turn','Another Counter','2','Round 1']: add(t)
+ p=parse(tostring(r,encoding='unicode'))['players'][0]
+ assert [m['name'] for m in p['primaryObjectives']]==['Control Central','Markers on Controlled Objectives','Another Counter']
+ assert p['primaryObjectives'][1]['counter']==value
+ assert p['primaryObjectives'][1]['enabled'] is True
+ assert p['primaryObjectives'][2]['counter']==2
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+});

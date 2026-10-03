@@ -6,6 +6,12 @@ ROOT = pathlib.Path(__file__).resolve().parent
 def parse(xml):
     root = ET.fromstring(xml)
     nodes = [n for n in root.iter('node') if n.get('package') == 'com.goonhammer.ttba' and (n.get('content-desc') or n.get('text'))]
+    parents = {child: parent for parent in root.iter() for child in parent}
+    def enabled(node):
+        while node is not None:
+            if node.get('enabled') == 'false': return False
+            node = parents.get(node)
+        return True
     texts = [(n.get('content-desc') or n.get('text')).strip() for n in nodes]
     header = next((re.fullmatch(r'(\d+)\s*[-–]\s*(\d+)\s+(.+?) vs (.+)', t) for t in texts if re.fullmatch(r'(\d+)\s*[-–]\s*(\d+)\s+(.+?) vs (.+)', t)), None)
     rnd = next((int(m[1]) for t in texts if (m := re.fullmatch(r'Round (\d+)', t))), None)
@@ -36,21 +42,27 @@ def parse(xml):
             current[m[1].lower()] = {'score': int(m[2]), 'max': int(m[3])}
         if section == 'PRIMARY':
             details = re.fullmatch(r'(.+)\n(\d+VP.*)', t)
-            if not details and i+1 < len(texts) and re.match(r'\d+VP', texts[i+1]):
+            counter_index = None
+            # Flutter exposes split rows in either label/rule/value or rule/label/value order.
+            label = '\n' not in t and not t.isdigit() and not re.match(r'\d+VP|PRIMARY:', t)
+            if not details and label and i+2 < len(texts) and re.match(r'\d+VP', texts[i+1]) and texts[i+2].isdigit():
                 details = (None, t, texts[i+1])
+                counter_index = i+2
+            elif not details and label and i>0 and i+1<len(texts) and re.match(r'\d+VP',texts[i-1]) and texts[i+1].isdigit():
+                details = (None, t, texts[i-1])
+                counter_index = i+1
             if details:
                 if current['primaryObjectives'] is None: current['primaryObjectives'] = []
                 checkboxes = [n for n in nodes[i].iter('node') if n.get('checkable') == 'true']
                 checked = checkboxes[0].get('checked') == 'true' if len(checkboxes) == 1 else None
                 counter = None
-                # Split counter rows expose label, scoring rule, then numeric value.
-                if '\n' not in t and i+2 < len(texts) and texts[i+2].isdigit():
-                    counter = int(texts[i+2])
-                current['primaryObjectives'].append({'name': details[1], 'details': details[2], 'checked': checked, 'counter': counter})
+                if counter_index is not None:
+                    counter = int(texts[counter_index])
+                current['primaryObjectives'].append({'name': details[1], 'details': details[2], 'checked': checked, 'counter': counter, 'enabled': enabled(nodes[i])})
         m = re.fullmatch(r'(.+)\n(\d+)\n/(\d+)(?:\n\+(\d+)pts)?', t)
         if m:
             if current['secondaries'] is None: current['secondaries'] = []
-            current['secondaries'].append(dict(name=m[1], score=int(m[2]), max=int(m[3])))
+            current['secondaries'].append(dict(name=m[1], score=int(m[2]), max=int(m[3]), enabled=enabled(nodes[i])))
     # Only compare card membership when the entire secondary section is visible.
     # A following player heading bounds it; for the final player require blank
     # space below the last row and above the fixed round-navigation button.

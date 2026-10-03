@@ -15,7 +15,7 @@
    if(p?.primary){
     const primary=make('section','','live-primary');
     primary.append(make('div',`PRIMARIA · ${value(p.primary)}`,'mission-heading'));
-    for(const objective of p.primaryObjectives||[]){
+    for(const objective of (p.primaryObjectives||[]).filter(m=>m.enabled!==false)){
      const row=make('div','','primary-objective');
      row.append(make('span',objective.name,'objective-name'));
      const hasCounter=objective.counter!=null;
@@ -26,8 +26,9 @@
     }
     missions.append(primary);
    }
-   if(p?.secondaries?.length)missions.append(make('div','SECUNDARIAS','mission-heading'));
-   for(const m of p?.secondaries||[])missions.append(make('div',`${m.name}  ${m.score}/${m.max}`,'live-mission'));
+   const secondaries=(p?.secondaries||[]).filter(m=>m.enabled!==false);
+   if(secondaries.length)missions.append(make('div','SECUNDARIAS','mission-heading'));
+   for(const m of secondaries)missions.append(make('div',`${m.name}  ${m.score}/${m.max}`,'live-mission'));
    if(!p)card.append(make('div','Sin jugador vinculado','live-note'));
    panel.append(card);
    const rect=document.querySelector('.team.'+side+' .faction-icon').getBoundingClientRect();
