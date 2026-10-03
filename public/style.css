@@ -8,3 +8,5 @@
 .control .secondary-button{background:transparent;border:1px solid #647284;color:#e8e4d8}.control button:disabled{opacity:.5;cursor:wait}
 .announcement-preview{background:#101620;border-left:3px solid #d9ad4a;padding:14px 18px;border-radius:3px}.announcement-preview p{white-space:pre-wrap;overflow-wrap:anywhere}.announcement-preview a{color:#e8bf70;font-size:13px}
 .announcement-help{font-size:13px;color:#b9c1cd}#toast-feedback{color:#e8bf70;min-height:24px}
+
+.turn-indicator{margin:16px 0;padding:18px;border:2px solid #c59b52;border-radius:12px;background:#172335;color:#fff}.turn-indicator strong{display:block;font-size:1.35rem}.turn-indicator p{margin:8px 0 0}#turn-reason{font-size:.9rem;opacity:.8}

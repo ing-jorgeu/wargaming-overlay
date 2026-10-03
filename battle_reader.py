@@ -51,6 +51,34 @@ def parse(xml):
         if m:
             if current['secondaries'] is None: current['secondaries'] = []
             current['secondaries'].append(dict(name=m[1], score=int(m[2]), max=int(m[3])))
+    # Only compare card membership when the entire secondary section is visible.
+    # A following player heading bounds it; for the final player require blank
+    # space below the last row and above the fixed round-navigation button.
+    def bounds(node):
+        v = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        return tuple(map(int, v.groups())) if v else None
+    for player in players:
+        player['secondariesComplete'] = False
+    owner = None
+    for i, text in enumerate(texts):
+        if text in names:
+            owner = names.index(text)
+        if owner is None or not re.fullmatch(r'SECONDARY:\s*\d+/\d+', text):
+            continue
+        end = next((j for j in range(i+1, len(texts)) if texts[j] in names or re.fullmatch(r'Round \d+', texts[j])), None)
+        if end is None:
+            continue
+        section = texts[i+1:end]
+        if 'Select missions' not in section or 'Discard missions' not in section:
+            continue
+        complete = texts[end] in names
+        if not complete and owner == 1 and end > i+1:
+            last, tab = bounds(nodes[end-1]), bounds(nodes[end])
+            complete = bool(last and tab and tab[1]-last[3] >= max(100, last[3]-last[1]))
+        if complete:
+            players[owner]['secondariesComplete'] = True
+            if players[owner]['secondaries'] is None:
+                players[owner]['secondaries'] = []
     return dict(round=rnd, half=None, players=players)
 
 def merge(previous, fresh):

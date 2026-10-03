@@ -1,0 +1,580 @@
+{
+  "facts": [
+    {
+      "id": "lore:adeptus-custodes:custodian-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Custodes combatían en las Guerras de Unificación, antes de la Gran Cruzada.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-2",
+      "faction": "Adeptus Custodes",
+      "text": "La Torre del Hegemón alberga el centro de mando de los Custodes.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-3",
+      "faction": "Adeptus Custodes",
+      "text": "Custodes y Hermanas del Silencio forman las Garras del Emperador.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-4",
+      "faction": "Adeptus Custodes",
+      "text": "Los Custodes llevaron a Alicia Dominica ante el Emperador antes de su rebelión contra Vandire.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-5",
+      "faction": "Adeptus Custodes",
+      "text": "Los Custodes sirven como emisarios individuales desde la Gran Cruzada.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-6",
+      "faction": "Adeptus Custodes",
+      "text": "El Administratum considera herético registrar una derrota de los Custodes: proclama victorias anticipadas.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-7",
+      "faction": "Adeptus Custodes",
+      "text": "La Guerra en la Telaraña redujo a los Custodes de unos diez mil guerreros a aproximadamente mil.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-8",
+      "faction": "Adeptus Custodes",
+      "text": "Los Custodes reforzaron a Guilliman contra los Mil Hijos en Luna.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-9",
+      "faction": "Adeptus Custodes",
+      "text": "Guilliman y Valoris modificaron el Edicto de Contención que limitaba las operaciones de los Custodes.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-10",
+      "faction": "Adeptus Custodes",
+      "text": "Hasta los inquisidores deben arrodillarse ante los Custodes para solicitar acceso al Trono.",
+      "sourceTitle": "Lexicanum · Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-1",
+      "faction": "Adeptus Custodes",
+      "text": "Trajann Valoris combatió como exterminador Allarus antes de dirigir a los Custodes.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-2",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris superó dos Juegos de Sangre, una hazaña excepcional entre los Custodes.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-3",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris sirvió veintidós años entre los Compañeros antes de regresar a tareas más activas.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-4",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris sucedió a Andros Launceddre tras su muerte durante los Años de Locura.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-5",
+      "faction": "Adeptus Custodes",
+      "text": "En la Puerta del León, Valoris encabezó una carga de cuatro mil Custodes.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-6",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris dirigió Custodes y Caballeros Grises juntos en Gathalamor.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-7",
+      "faction": "Adeptus Custodes",
+      "text": "En Sanctum, Valoris salvó a Leontus de un Emisario Norn.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-8",
+      "faction": "Adeptus Custodes",
+      "text": "La armadura personal de Valoris recibe el nombre de Castellan Plate.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-9",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris porta el Moment Shackle, una reliquia de la Era Oscura de la Tecnología.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:trajann-valoris-10",
+      "faction": "Adeptus Custodes",
+      "text": "Valoris comandó una flota Solblade contra Leviathan desde la nave Manifest Judgement.",
+      "sourceTitle": "Lexicanum · Trajann Valoris",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Trajann_Valoris",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-1",
+      "faction": "Adeptus Custodes",
+      "text": "El Escudo Aquilano protege a personas cuyo futuro se considera esencial para la seguridad del Emperador.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-2",
+      "faction": "Adeptus Custodes",
+      "text": "Los videntes del Palacio ayudan a identificar a quienes necesita proteger el Escudo Aquilano.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-3",
+      "faction": "Adeptus Custodes",
+      "text": "Los guardianes aquilanos pueden aparecer sin aviso y anunciar que alguien está bajo su protección.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-4",
+      "faction": "Adeptus Custodes",
+      "text": "El Escudo Aquilano abandona a su protegido cuando considera cumplido su papel, aunque después corra peligro.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-5",
+      "faction": "Adeptus Custodes",
+      "text": "Entre los protegidos aquilanos hubo canonesas, generales e incluso capitanes de Marines Espaciales.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:aquilan-shield-6",
+      "faction": "Adeptus Custodes",
+      "text": "Muchos antiguos Compañeros del Emperador pasan posteriormente al Escudo Aquilano.",
+      "sourceTitle": "Lexicanum · Aquilan Shield",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Aquilan_Shield",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Shadowkeepers custodian horrores de la Era de los Conflictos en las Celdas Oscuras.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-2",
+      "faction": "Adeptus Custodes",
+      "text": "Algunos Shadowkeepers permanecen décadas de guardia en los corredores subterráneos del Palacio.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-3",
+      "faction": "Adeptus Custodes",
+      "text": "El comandante de los Shadowkeepers ostenta el título de Lockwarden.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-4",
+      "faction": "Adeptus Custodes",
+      "text": "La Gran Grieta coincidió con fugas de entidades y artefactos de las Celdas Oscuras.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-5",
+      "faction": "Adeptus Custodes",
+      "text": "Los Shadowkeepers recorren la galaxia para devolver a prisión los horrores que escaparon.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-6",
+      "faction": "Adeptus Custodes",
+      "text": "Los Shadowkeepers entregaron tecnología de una Celda Oscura para restaurar la Phalanx.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-7",
+      "faction": "Adeptus Custodes",
+      "text": "Los Shadowkeepers visten armaduras negras y conservan armas misteriosas para afrontar a sus prisioneros.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:shadowkeepers-8",
+      "faction": "Adeptus Custodes",
+      "text": "Custodes dirigidos por el Lockwarden destruyeron desde dentro el pecio Ominous Gift.",
+      "sourceTitle": "Lexicanum · Shadowkeepers",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Shadowkeepers",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-1",
+      "faction": "Adeptus Custodes",
+      "text": "La Hueste del Terror busca disuadir futuras rebeliones mediante demostraciones de fuerza devastadoras.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-2",
+      "faction": "Adeptus Custodes",
+      "text": "Tres naves anteriores a la Herejía, las Moiraides, transportan a la Hueste del Terror.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-3",
+      "faction": "Adeptus Custodes",
+      "text": "La Hueste del Terror rara vez necesita desplegar juntas las fuerzas de sus tres Moiraides.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-4",
+      "faction": "Adeptus Custodes",
+      "text": "El Santuario de los Mil Ojos es la fortaleza de la Hueste del Terror.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-5",
+      "faction": "Adeptus Custodes",
+      "text": "Quinientas águilas gigantes del Santuario de los Mil Ojos ocultan sistemas de vigilancia.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-6",
+      "faction": "Adeptus Custodes",
+      "text": "La Hueste del Terror combatió en Andromax durante la Octava Cruzada Negra.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-7",
+      "faction": "Adeptus Custodes",
+      "text": "La Hueste del Terror defendió la Echovault del planeta Dakhorth.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:dread-host-8",
+      "faction": "Adeptus Custodes",
+      "text": "La Hueste del Terror destruyó el Arca del Augurio Malignity’s Shadow.",
+      "sourceTitle": "Lexicanum · Dread Host",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Dread_Host",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Emissaries Imperatus creen escuchar la voz del Emperador durante sus meditaciones.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-2",
+      "faction": "Adeptus Custodes",
+      "text": "Los emisarios custodes debaten entre ellos cómo interpretar la voluntad que atribuyen al Emperador.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-3",
+      "faction": "Adeptus Custodes",
+      "text": "Los Emissaries Imperatus entregan ocasionalmente reliquias del Palacio a campeones capaces de aprovecharlas.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-4",
+      "faction": "Adeptus Custodes",
+      "text": "Los Emissaries Imperatus ayudaron a convencer a capítulos tradicionalistas de aceptar Marines Primaris.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-5",
+      "faction": "Adeptus Custodes",
+      "text": "Sanash Gallimedan convenció a los Martillos de Dorn de incorporar Primaris.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:emissaries-imperatus-6",
+      "faction": "Adeptus Custodes",
+      "text": "Los Emissaries Imperatus combinan armadura dorada, hombrera roja y túnicas gris blanquecino.",
+      "sourceTitle": "Lexicanum · Emissaries Imperatus",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Emissaries_Imperatus",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:blood-games-1",
+      "faction": "Adeptus Custodes",
+      "text": "En los Juegos de Sangre, Custodes actúan como invasores para poner a prueba la seguridad del Palacio.",
+      "sourceTitle": "Lexicanum · Blood Games",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Blood_Games",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:blood-games-2",
+      "faction": "Adeptus Custodes",
+      "text": "Según el relato de Alpharius, su infiltración del Palacio ayudó a inspirar los Juegos de Sangre.",
+      "sourceTitle": "Lexicanum · Blood Games",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Blood_Games",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:blood-games-3",
+      "faction": "Adeptus Custodes",
+      "text": "Para los Juegos de Sangre se han capturado y liberado Marines del Caos dentro del Palacio.",
+      "sourceTitle": "Lexicanum · Blood Games",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Blood_Games",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:blood-games-4",
+      "faction": "Adeptus Custodes",
+      "text": "Valdor recomendó ejercicios de guerra después del golpe contra el Palacio durante la Unificación.",
+      "sourceTitle": "Lexicanum · Blood Games",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Blood_Games",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:eyes-of-the-emperor-1",
+      "faction": "Adeptus Custodes",
+      "text": "Custodes que ya no cumplen sus exigentes estándares físicos pueden convertirse en Ojos del Emperador.",
+      "sourceTitle": "Lexicanum · Eyes of the Emperor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Eyes_of_the_Emperor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:eyes-of-the-emperor-2",
+      "faction": "Adeptus Custodes",
+      "text": "Los Ojos del Emperador entregan su equipo antes de abandonar Terra vestidos con túnicas negras.",
+      "sourceTitle": "Lexicanum · Eyes of the Emperor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Eyes_of_the_Emperor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:eyes-of-the-emperor-3",
+      "faction": "Adeptus Custodes",
+      "text": "Los Ojos del Emperador construyen redes de informantes para descubrir amenazas contra Terra.",
+      "sourceTitle": "Lexicanum · Eyes of the Emperor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Eyes_of_the_Emperor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:eyes-of-the-emperor-4",
+      "faction": "Adeptus Custodes",
+      "text": "Los Ojos del Emperador alertan al Capitán General mediante canales secretos.",
+      "sourceTitle": "Lexicanum · Eyes of the Emperor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Eyes_of_the_Emperor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:eyes-of-the-emperor-5",
+      "faction": "Adeptus Custodes",
+      "text": "Algunos Ojos del Emperador solicitan servir dentro de un Dreadnought si aparece la oportunidad.",
+      "sourceTitle": "Lexicanum · Eyes of the Emperor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Eyes_of_the_Emperor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:allarus-custodian-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Allarus se especializan en eliminar figuras clave del ejército enemigo.",
+      "sourceTitle": "Lexicanum · Allarus Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Allarus_Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:allarus-custodian-2",
+      "faction": "Adeptus Custodes",
+      "text": "Los teleportadores de la armadura Allarus permiten a sus portadores cerrar distancias con sus objetivos.",
+      "sourceTitle": "Lexicanum · Allarus Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Allarus_Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:allarus-custodian-3",
+      "faction": "Adeptus Custodes",
+      "text": "Los Allarus llevan lanzagranadas Balistus montados en la muñeca.",
+      "sourceTitle": "Lexicanum · Allarus Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Allarus_Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:allarus-custodian-4",
+      "faction": "Adeptus Custodes",
+      "text": "El Capitán General selecciona personalmente a los Custodes destinados a los Allarus.",
+      "sourceTitle": "Lexicanum · Allarus Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Allarus_Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:allarus-custodian-5",
+      "faction": "Adeptus Custodes",
+      "text": "Los Allarus pueden dispersarse después de su primer ataque para actuar como cazadores individuales.",
+      "sourceTitle": "Lexicanum · Allarus Custodian",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Allarus_Custodian",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Vertus Praetors cargan con lanzas interceptoras desde motos gravitatorias Dawneagle.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-2",
+      "faction": "Adeptus Custodes",
+      "text": "Los Vertus Praetors también realizan exploración por delante de la fuerza principal.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-3",
+      "faction": "Adeptus Custodes",
+      "text": "Las Dawneagle emplean tecnología que se remonta a la Gran Cruzada.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-4",
+      "faction": "Adeptus Custodes",
+      "text": "Las motos Dawneagle se aproximan al tamaño de pequeños cazas y alcanzan velocidades casi supersónicas.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-5",
+      "faction": "Adeptus Custodes",
+      "text": "Los cascos de las Dawneagle permiten atravesar muros sin desmontar a sus jinetes.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:vertus-praetor-6",
+      "faction": "Adeptus Custodes",
+      "text": "Los Vertus Praetors se forman primero entre la Guardia Custodia antes de especializarse como motoristas.",
+      "sourceTitle": "Lexicanum · Vertus Praetor",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Vertus_Praetor",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-warden-1",
+      "faction": "Adeptus Custodes",
+      "text": "Los Custodian Wardens acumulan al menos cinco siglos defendiendo Terra.",
+      "sourceTitle": "Lexicanum · Custodian Warden",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian_Warden",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-warden-2",
+      "faction": "Adeptus Custodes",
+      "text": "Cada Warden redacta sus propios juramentos tras un año de meditación en la Gallowtower.",
+      "sourceTitle": "Lexicanum · Custodian Warden",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian_Warden",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-warden-3",
+      "faction": "Adeptus Custodes",
+      "text": "Las túnicas de los Wardens señalan su compromiso como centinelas inamovibles.",
+      "sourceTitle": "Lexicanum · Custodian Warden",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian_Warden",
+      "verifiedAt": "2026-09-10"
+    },
+    {
+      "id": "lore:adeptus-custodes:custodian-warden-4",
+      "faction": "Adeptus Custodes",
+      "text": "Los Wardens combaten con lanzas guardianas o hachas Castellan.",
+      "sourceTitle": "Lexicanum · Custodian Warden",
+      "sourceUrl": "https://wh40k.lexicanum.com/wiki/Custodian_Warden",
+      "verifiedAt": "2026-09-10"
+    }
+  ]
+}

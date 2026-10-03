@@ -21,8 +21,29 @@ test('ambiguous and missing links never assign the same score to both sides', ()
   assert.deepEqual(matchPlayers({left:{name:'Ana'},right:{name:'Luis'}},{players:[{name:'Ana'},{name:'Ana'}]}),[null,null]);
 });
 test('round half is explicit, optional, and independent of player side', () => {
-  assert.equal(roundLabel({roundHalf:'bottom'},{round:2,half:'top'},true),'RONDA 2 · TOP · PRIMER TURNO');
-  assert.equal(roundLabel({roundHalf:'top'},{round:2,half:'bottom'},true),'RONDA 2 · BOTTOM · SEGUNDO TURNO');
+  assert.equal(roundLabel({roundHalf:'bottom'},{round:2,half:'top'},true),'RONDA 2 · TOP');
+  assert.equal(roundLabel({roundHalf:'top'},{round:2,half:'bottom'},true),'RONDA 2 · BOTTOM');
   assert.equal(roundLabel({}, {round:2},true),'RONDA 2');
   assert.equal(roundLabel({roundHalf:'invalid'},{round:2},false),'RONDA —');
+});
+
+test('control distinguishes player order from unknown active turn',()=>{
+ const {turnStatus}=require('../public/match-view');
+ const game={round:5,half:null,players:[{name:'Ana'},{name:'Luis'}],turn:{orderSource:'ui-order',firstPlayer:'Ana'}};
+ assert.equal(turnStatus(game).order,'TOP: Ana · BOTTOM: Luis');
+ assert.equal(turnStatus(game).label,'RONDA 5');
+ assert.equal(turnStatus({...game,half:'bottom'}).label,'RONDA 5 · BOTTOM');
+});
+
+test('turn color follows the active player across swaps, including app aliases',()=>{
+ const layout={left:{name:'Display A',appName:'Pedro',color:'#7d1520'},right:{name:'Display B',appName:'John',color:'#245eb8'}};
+ const game={round:1,half:'top',players:[{name:'Pedro'},{name:'John'}],turn:{firstPlayer:'Pedro',orderSource:'ui-order'}};
+ assert.equal(roundLabel(layout,game,true),'RONDA 1 · TOP · AZUL');
+ const swapped=swapPlayers(layout);
+ assert.equal(roundLabel(swapped,game,true),'RONDA 1 · TOP · ROJO');
+ game.half='bottom';
+ assert.equal(roundLabel(layout,game,true),'RONDA 1 · BOTTOM · ROJO');
+ assert.equal(roundLabel(swapped,game,true),'RONDA 1 · BOTTOM · AZUL');
+ assert.equal(require('../public/match-view').turnStatus(game,swapped).label,'RONDA 1 · BOTTOM · AZUL');
+ assert.equal(roundLabel({left:{name:'Pedro'},right:{name:'Pedro'}},{...game,half:'top'},true),'RONDA 1 · TOP');
 });

@@ -46,3 +46,19 @@ for names in [('Alpha','Beta'),('Beta','Alpha')]:
  const r=spawnSync(python,['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});
  assert.equal(r.status,0,r.stderr);
 });
+test('secondary completeness requires section controls and visible ending',()=>{
+ const code=`
+from battle_reader import parse
+from xml.etree.ElementTree import Element,SubElement,tostring
+r=Element('hierarchy')
+def add(t,b='[0,0][100,40]'):
+ return SubElement(r,'node',{'package':'com.goonhammer.ttba','content-desc':t,'bounds':b})
+add('10-10 Pedro vs John');add('Pedro');add('SECONDARY: 0/45');add('Select missions');add('Discard missions');john=add('John');add('Round 1')
+s=parse(tostring(r,encoding='unicode'));assert s['players'][0]['secondariesComplete'];assert s['players'][0]['secondaries']==[]
+r.remove(john);s=parse(tostring(r,encoding='unicode'));assert not s['players'][0]['secondariesComplete']
+r=Element('hierarchy');add('10-10 Pedro vs John');add('John');add('SECONDARY: 0/45');add('Select missions');add('Discard missions','[0,200][100,250]');tab=add('Round 1','[0,500][100,550]')
+s=parse(tostring(r,encoding='unicode'));assert s['players'][1]['secondariesComplete']
+tab.set('bounds','[0,260][100,300]');s=parse(tostring(r,encoding='unicode'));assert not s['players'][1]['secondariesComplete']
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+});
