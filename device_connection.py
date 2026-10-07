@@ -58,24 +58,30 @@ class DeviceConnection:
             temp.write_text(json.dumps({'identity': self.identity, 'aliases': sorted(self.aliases)}))
             temp.replace(self.path)
 
-    def reconnect(self):
+    def reconnect(self, discover_only=False):
         if not self.identity or self.now() < self.retry_at:
             return
         self.retry_at = self.now() + 15
-        targets = {a for a in self.aliases if ':' in a and not a.startswith('adb-')}
+        known = {a for a in self.aliases if ':' in a and not a.startswith('adb-')}
+        discovered = set()
         # Only discover services advertising the remembered device, never arbitrary LAN phones.
         try:
             for line in self.run('mdns', 'services').splitlines():
                 fields = line.split()
                 if (len(fields) >= 3 and fields[0].startswith('adb-' + self.identity + '-')
                         and '_adb-tls-connect._tcp' in fields[1]):
-                    targets.add(fields[2])
+                    discovered.add(fields[2])
         except (OSError, subprocess.SubprocessError):
             pass
-        for target in sorted(targets)[:4]:
+        # Current advertisements take priority over obsolete ports stored in history.
+        targets = sorted(discovered) + ([] if discover_only else sorted(known - discovered))
+        for target in targets[:4]:
             if re.fullmatch(r'[A-Za-z0-9.\-\[\]:]+:\d+', target):
                 try:
-                    self.run('connect', target)
+                    result = self.run('connect', target)
+                    if 'connected to' in result and self.identify(target) == self.identity:
+                        self.remember([{'serial': target}])
+                        break
                 except (OSError, subprocess.SubprocessError):
                     pass
 
@@ -110,4 +116,7 @@ class DeviceConnection:
         if not self.identity:
             self.explicit = chosen['serial']
         self.remember(matching)
+        # Establish Wi-Fi while USB is still available, without delaying on stale IPs.
+        if chosen['transport'] == 'usb' and not any(d['transport'] == 'wifi' for d in matching):
+            self.reconnect(discover_only=True)
         return chosen

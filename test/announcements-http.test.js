@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {spawn} = require('node:child_process');
 const {once} = require('node:events');
-test('HTTP and SSE deliver plain text, validate input and share one fact history', {timeout:15000}, async t => {
+test('HTTP and SSE keep working when optional YouTube authentication fails', {timeout:15000}, async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(),'overlay-toast-http-'));
   const repo = path.resolve(__dirname,'..');
   const preload = path.join(directory,'preload.cjs');
@@ -14,8 +14,9 @@ test('HTTP and SSE deliver plain text, validate input and share one fact history
     http.createServer=(...args)=>{const server=original(...args);server.on('listening',()=>console.log('TEST_PORT='+server.address().port));return server;};
     require('node:child_process').spawn=()=>{const child=new (require('node:events').EventEmitter)();child.stdout=new (require('node:stream').PassThrough)();child.kill=()=>{};return child;};
     require(${JSON.stringify(path.join(repo,'listhammer.js'))}).syncStats=async()=>null;
+    require(${JSON.stringify(path.join(repo,'youtube/auth.js'))}).Auth.prototype.token=async()=>{throw Error('Simulated OAuth failure');};
   `);
-  const child=spawn(process.execPath,['--require',preload,path.join(repo,'server.js')],{env:{...process.env,PORT:'0',OVERLAY_DATA_DIR:directory},stdio:['ignore','pipe','pipe']});
+  const child=spawn(process.execPath,['--require',preload,path.join(repo,'server.js')],{env:{...process.env,PORT:'0',OVERLAY_DATA_DIR:directory,YOUTUBE_CHAT_TTS_ENABLED:'true'},stdio:['ignore','pipe','pipe']});
   t.after(async()=>{if(child.exitCode===null){child.kill();await once(child,'exit');}await fs.rm(directory,{recursive:true,force:true});});
   let output='', errors='';
   child.stderr.on('data',c=>{errors+=c;});

@@ -1,96 +1,55 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {mergeGame,emptyGame}=require('../game-store');
-const reading=(round,a,b,extra={})=>({connected:true,round,players:[{name:'A',score:a,...extra},{name:'B',score:b}]});
-test('automatic halves follow scoring, survive restart/disconnect and cannot rewind within a round',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0));assert.equal(g.half,null);
- g=mergeGame(g,reading(1,5,0));assert.equal(g.half,'top');
- g=mergeGame(JSON.parse(JSON.stringify(g)),reading(1,5,4));assert.equal(g.half,'bottom');
- g=mergeGame(g,reading(1,6,4));assert.equal(g.half,'bottom');
- g=mergeGame(g,{connected:false});assert.equal(g.half,'bottom');
- g=mergeGame(g,reading(2,6,4));assert.equal(g.half,null);
- g=mergeGame(g,reading(2,8,4));assert.equal(g.half,'top');
- g=mergeGame(g,reading(1,99,99));assert.equal(g.half,null);
- g=mergeGame(g,reading(2,8,4));assert.equal(g.half,'top');
+const read=(round,a={},b={})=>({connected:true,round,players:[{name:'A',score:0,...a},{name:'B',score:0,...b}]});
+const cards=(...names)=>({secondaries:names.map(name=>({name,score:0}))});
+const start=()=>mergeGame(emptyGame(),read(1));
+const top=()=>mergeGame(start(),read(1,cards('A1')));
+test('only drawing cards selects top and bottom, and bottom cannot rewind',()=>{
+ let g=top();assert.equal(g.half,'top');
+ g=mergeGame(g,read(1,{},cards('B1')));assert.equal(g.half,'bottom');assert.equal(g.turn.activePlayer,'B');
+ g=mergeGame(g,read(1,cards('A2')));assert.equal(g.half,'bottom');assert.equal(g.turn.activePlayer,'B');
 });
-test('round 5 uses app order even when the bottom player scores first after connecting',()=>{
- let g=mergeGame(emptyGame(),reading(5,60,65));
- assert.equal(g.half,null);assert.equal(g.turn.firstPlayer,'A');
- g=mergeGame(g,reading(5,60,70));assert.equal(g.half,'bottom');assert.equal(g.turn.activePlayer,'B');
- g=mergeGame(g,reading(5,62,70));assert.equal(g.half,'bottom');assert.equal(g.turn.activePlayer,'B');
-});
-test('midgame top scoring and swapped overlay sides keep Tabletop Battles turn order',()=>{
- const {swapPlayers,matchPlayers,roundLabel}=require('../public/match-view');
- let g=mergeGame(emptyGame(),reading(5,60,65));g=mergeGame(g,reading(5,65,65));
- assert.equal(g.half,'top');
- const layout=swapPlayers({left:{name:'A'},right:{name:'B'}});
- assert.deepEqual(matchPlayers(layout,g).map(p=>p.name),['B','A']);
- assert.match(roundLabel(layout,g,true),/TOP/);assert.equal(g.turn.firstPlayer,'A');
-});
-test('legacy learned order is discarded before using new activity',()=>{
- let g=reading(5,60,65);g.turn={firstPlayer:'B',activePlayer:'B',half:'top',highestRound:5,seen:{},eligible:true};
- g=mergeGame(g,reading(5,60,65));assert.equal(g.half,null);assert.equal(g.turn.firstPlayer,'A');
- g=mergeGame(g,reading(5,60,70));assert.equal(g.half,'bottom');
-});
-test('scroll discovery, CP, decreases, and simultaneous scoring do not select a turn',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0));
- g=mergeGame(g,reading(1,0,0,{cp:4,secondaries:[{name:'Newly visible',score:3}]}));assert.equal(g.half,null);
- g=mergeGame(g,reading(1,0,0,{cp:2,secondaries:[{name:'Newly visible',score:2}]}));assert.equal(g.half,null);
- g=mergeGame(g,reading(1,1,1));assert.equal(g.half,null);
-});
-test('individual mission scoring and checked primary objectives trigger detection',()=>{
- for(const [before,after] of [
-  [{secondaries:[{name:'Mission',score:0}]},{secondaries:[{name:'Mission',score:2}]}],
-  [{primaryObjectives:[{name:'Hold',checked:false}]},{primaryObjectives:[{name:'Hold',checked:true}]}],
-  [{primary:{score:0}},{primary:{score:5}}],
-  [{secondary:{score:0}},{secondary:{score:5}}]
- ]){
-  let g=mergeGame(emptyGame(),reading(1,0,0,before));
-  g=mergeGame(g,reading(1,0,0,after));assert.equal(g.half,'top');
+test('all scoring and objective changes leave turn unchanged, including opponents secondaries',()=>{
+ for(const base of [start(),top()]){
+  let g=mergeGame(base,read(1,{}, {...cards('B1'),secondaries:[{name:'B1',score:3}],primary:{score:3},secondary:{score:3},primaryObjectives:[{name:'Hold',checked:false,counter:0}]}));
+  assert.equal(g.half,base.half);
+  g=mergeGame(g,read(1,{}, {score:20,cp:4,primary:{score:8},secondary:{score:10},secondaries:[{name:'B1',score:5}],primaryObjectives:[{name:'Hold',checked:true,counter:4}]}));
+  assert.equal(g.half,base.half);
  }
 });
-test('different players reset turn inference',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0));g=mergeGame(g,reading(1,2,0));
- g=mergeGame(g,{connected:true,round:3,players:[{name:'C',score:20},{name:'D',score:30}]});
- assert.equal(g.half,null);assert.equal(g.turn.firstPlayer,'C');
-});
-
-test('known half survives background reading and restart without fresh scoring',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0));g=mergeGame(g,reading(1,5,0));
- g=mergeGame(g,{connected:false,phoneConnected:true,error:'Otra pantalla'});
- g=mergeGame(JSON.parse(JSON.stringify(g)),reading(1,5,0));assert.equal(g.half,'top');
-});
-test('new unscored secondary identifies current player after complete baseline',()=>{
- const card=(name)=>({name,score:0});
- let g=mergeGame(emptyGame(),reading(1,0,0,{secondaries:[],secondariesComplete:true}));
- g=mergeGame(g,reading(1,0,0,{secondaries:[card('Burden of Trust')],secondariesComplete:true}));
- assert.equal(g.half,'top');
- let r=reading(1,0,0);r.players[1].secondaries=[];r.players[1].secondariesComplete=true;g=mergeGame(g,r);
- r=reading(1,0,0);r.players[1].secondaries=[card('Cleanse')];r.players[1].secondariesComplete=true;
- g=mergeGame(JSON.parse(JSON.stringify(g)),r);assert.equal(g.half,'bottom');
-});
-test('partial addition after empty baseline detects a draw but initial readings do not',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0,{secondaries:[],secondariesComplete:true}));
- g=mergeGame(g,reading(1,0,0,{secondaries:[{name:'Hidden',score:0}]}));assert.equal(g.half,'top');
- let h=mergeGame(emptyGame(),reading(5,50,60,{secondaries:[{name:'Existing',score:0}],secondariesComplete:true}));assert.equal(h.half,null);
- h=mergeGame(h,reading(6,50,60,{secondaries:[{name:'New round',score:0}],secondariesComplete:true}));assert.equal(h.half,null);
-});
-
-test('first unscored bottom card in a partial reading switches without scoring',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0));
- g=mergeGame(g,reading(1,3,0));assert.equal(g.half,'top');
- const r=reading(1,3,0);r.players[1].secondaries=[{name:'Cleanse',score:0}];
- g=mergeGame(JSON.parse(JSON.stringify(g)),r);
- assert.equal(g.half,'bottom');assert.equal(g.turn.activePlayer,'B');
-});
-test('partial card history survives scrolling, disappearance and restart',()=>{
- let g=mergeGame(emptyGame(),reading(1,0,0,{secondaries:[{name:'Known',score:0}]}));
- g=mergeGame(g,reading(1,0,0,{secondaries:[],secondariesComplete:true}));
+test('partial cards persist across scrolling, disconnect and restart without false draws',()=>{
+ let g=mergeGame(emptyGame(),read(1,cards('Known')));
+ g=mergeGame(g,read(1,{secondaries:[],secondariesComplete:true}));
  g=mergeGame(g,{connected:false});
- g=mergeGame(JSON.parse(JSON.stringify(g)),reading(1,0,0,{secondaries:[{name:'Known',score:0}]}));
- assert.equal(g.half,null);
- g=mergeGame(g,reading(1,0,0,{secondaries:[{name:'New',score:0}]}));
- assert.equal(g.half,'top');assert.deepEqual(g.turn.cards.A,['Known','New']);
- g=mergeGame(g,reading(2,0,0,{secondaries:[{name:'Known',score:0}]}));
- assert.equal(g.half,null);assert.deepEqual(g.turn.cards.A,['Known','New']);
+ g=mergeGame(JSON.parse(JSON.stringify(g)),read(1,cards('Known')));assert.equal(g.half,null);
+ g=mergeGame(g,read(1,cards('New')));assert.equal(g.half,'top');
+ g=mergeGame(JSON.parse(JSON.stringify(g)),read(1));assert.equal(g.half,'top');
+});
+test('new round resets half, carried cards do not select a turn, and historical reads cannot alter it',()=>{
+ let g=mergeGame(top(),read(1,{},cards('B1')));
+ g=mergeGame(g,read(2));assert.equal(g.half,null);
+ g=mergeGame(g,read(2,{},cards('B1')));assert.equal(g.half,null);
+ g=mergeGame(g,read(2,cards('A2')));assert.equal(g.half,'top');
+ g=mergeGame(g,read(1,{},cards('Old')));assert.equal(g.half,null);
+ g=mergeGame(g,read(2));assert.equal(g.half,'top');
+});
+test('initial lists, simultaneous draws and disabled cards do not select a player',()=>{
+ let g=mergeGame(emptyGame(),read(5,cards('Existing'),cards('ExistingB')));assert.equal(g.half,null);
+ g=mergeGame(g,read(5,cards('NewA'),cards('NewB')));assert.equal(g.half,null);
+ g=mergeGame(g,read(5,{secondaries:[{name:'Disabled',score:0,enabled:false}]}));assert.equal(g.half,null);
+});
+test('app order selects bottom in round 5 and overlay swaps change color only',()=>{
+ const {swapPlayers,roundLabel}=require('../public/match-view');
+ let g=mergeGame(emptyGame(),read(5));g=mergeGame(g,read(5,{},cards('B1')));
+ assert.equal(g.half,'bottom');
+ const layout={left:{name:'A'},right:{name:'B'}};
+ assert.match(roundLabel(layout,g,true),/BOTTOM · ROJO/);
+ assert.match(roundLabel(swapPlayers(layout),g,true),/BOTTOM · AZUL/);
+});
+test('old scoring policy half is discarded while card history is retained',()=>{
+ let g=top();delete g.turn.detectionSource;g.turn.half='bottom';g.turn.activePlayer='B';
+ g=mergeGame(g,read(1,cards('A1')));assert.equal(g.half,null);
+ g=mergeGame(g,read(1,cards('A2')));assert.equal(g.half,'top');
+ const r=read(2);r.players[1].name='C';g=mergeGame(g,r);assert.equal(g.half,null);
 });

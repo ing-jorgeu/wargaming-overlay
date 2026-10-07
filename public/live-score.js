@@ -17,7 +17,10 @@
     primary.append(make('div',`PRIMARIA · ${value(p.primary)}`,'mission-heading'));
     for(const objective of (p.primaryObjectives||[]).filter(m=>m.enabled!==false)){
      const row=make('div','','primary-objective');
-     row.append(make('span',objective.name,'objective-name'));
+     const copy=make('div','','objective-copy');
+     copy.append(make('div',objective.name,'objective-name'));
+     if(objective.details)copy.append(make('div',objective.details,'objective-details'));
+     row.append(copy);
      const hasCounter=objective.counter!=null;
      const marker=make('span',hasCounter?String(objective.counter):objective.checked===true?'✓':objective.checked===false?'':'—',hasCounter?'objective-counter':'objective-check');
      marker.setAttribute('aria-label',hasCounter?`Contador: ${objective.counter}`:objective.checked===true?'Cumplida':objective.checked===false?'Pendiente':'Sin lectura');

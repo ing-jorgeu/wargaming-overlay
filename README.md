@@ -354,12 +354,48 @@ Con otra relación de aspecto mantiene 16:9, centrado horizontalmente y alineado
 | `wargaming-overlay setup --dry-run` | Muestra el plan sin instalar ni consultar ADB. |
 | `wargaming-overlay setup --install-adb` | Instala ADB si falta y hay un gestor compatible; después diagnostica. |
 | `wargaming-overlay migrate CARPETA` | Copia el estado anterior sin sobrescribir archivos existentes. |
-| `wargaming-overlay --help` | Muestra ayuda. |
+| `wargaming-overlay youtube-auth --client-secret RUTA` | Autoriza el canal con el JSON OAuth de escritorio. |
+| `wargaming-overlay youtube-auth` | Reautoriza usando el cliente OAuth guardado. |
+| `wargaming-overlay --help` o `-h` | Muestra ayuda. |
 | `wargaming-overlay --version` | Muestra versión. |
 
 `setup --install-adb` usa Homebrew, WinGet, apt-get, dnf o pacman según la plataforma. No instala Node, Python ni gestores de paquetes; no activa opciones de Android, no acepta autorizaciones USB ni acuerdos por ti. Puede pedir permisos del sistema. Si termina instalando pero todavía no detecta ADB, abre otra terminal y ejecuta `doctor`.
 
 `doctor` y `setup` devuelven código 1 si el diagnóstico no está listo, incluso si solo falta conectar el teléfono. Con ADB/Python instalados, `start` conserva el panel abierto y reintenta aunque falte el teléfono.
+
+### Comandos desde el repositorio
+
+Instala las dependencias con `npm ci` (o `npm install` si actualizas dependencias). Todos los comandos de la tabla anterior pueden ejecutarse como `node cli.js COMANDO` sin instalación global.
+
+| Comando | Acción |
+| --- | --- |
+| `npm start` | Inicia el backend desde este checkout. |
+| `npm start -- --port 8766 --interval 5` | Pasa opciones al backend; el separador `--` es necesario. |
+| `npm test` | Ejecuta las pruebas automatizadas; no necesita el canal ni reproduce audio. |
+| `npm run test-tts` | Reproduce tres mensajes de prueba por la salida predeterminada de macOS. |
+| `npm run facts:coverage` | Informa la cobertura real de curiosidades por facción. |
+| `npm run facts:coverage -- --require-four-hours` | Devuelve código 1 si alguna facción no llega a 120 curiosidades. |
+| `npm run prepublishOnly` | Ejecuta las pruebas previas a publicar; npm lo invoca automáticamente en `npm publish`. |
+| `npm pack --dry-run` | Revisa los archivos que incluirá el paquete sin publicarlo. |
+
+Para instalar o actualizar el comando global: `npm install -g @ing.jorgeu/wargaming-overlay`. Para una versión concreta: `npm install -g @ing.jorgeu/wargaming-overlay@2.5.0`. Usa `wargaming-overlay --version` para comprobar qué instalación ejecuta tu terminal.
+
+### Activar y desactivar la voz de YouTube (macOS)
+
+```sh
+# Desde el repositorio
+YOUTUBE_CHAT_TTS_ENABLED=true npm start
+
+# Con el paquete instalado globalmente
+YOUTUBE_CHAT_TTS_ENABLED=true wargaming-overlay start
+
+# Desactivar explícitamente
+YOUTUBE_CHAT_TTS_ENABLED=false wargaming-overlay start
+```
+
+La variable se aplica a ese inicio. También puedes exportarla en tu terminal; para quitar un valor exportado, usa `unset YOUTUBE_CHAT_TTS_ENABLED`. La configuración opcional `youtube-tts.json`, los pasos OAuth y las limitaciones están en [YouTube Live → voz local](#youtube-live--voz-local-macos). `Ctrl+C` detiene lector, chat y voz; los cambios de código/configuración requieren reiniciar.
+
+Para publicar una release, consulta [PUBLISHING.md](PUBLISHING.md): `npm version VERSION --no-git-tag-version`, `npm login`, `npm whoami`, `npm publish --dry-run` y `npm publish --access public`. La publicación requiere acceso a la cuenta propietaria y una versión no publicada.
 
 ### Opciones
 
@@ -371,6 +407,7 @@ Con otra relación de aspecto mantiene 16:9, centrado horizontalmente y alineado
 | `--adb` | Autodetección | Ruta al ejecutable ADB para `start`, `doctor` o `setup`. |
 | `--python` | Autodetección | Ruta al ejecutable Python para `start`, `doctor` o `setup`. |
 | `--data-dir` | Según el sistema | Carpeta de datos para `start` y destino de `migrate`. |
+| `--client-secret` | Cliente guardado, si existe | Ruta al JSON OAuth de escritorio; solo para `youtube-auth`. |
 
 Las opciones no se guardan como configuración del CLI: repítelas en futuros inicios si quieres mantener un puerto, serial o ruta distintos.
 
@@ -461,7 +498,7 @@ El botón **Restablecer datos de la partida** vacía los puntos y misiones guard
 
 Solo lee lo visible. Un bloque sin nombre de jugador se ignora para evitar asignaciones incorrectas. Los datos conservados pueden haber cambiado fuera de pantalla y las listas de misiones pueden ser parciales. No interpreta una lista ausente como lista vacía.
 
-Al avanzar a la ronda siguiente conserva las secundarias sin puntuar hasta confirmar la lista actual y mantiene las condiciones de primaria, reiniciando sus marcas y contadores. Los totales acumulados se conservan; los CP esperan una nueva lectura. Las lecturas parciales no eliminan misiones fuera de pantalla. No arrastra misiones al consultar rondas anteriores o saltar varias rondas. Si consultas una ronda histórica en el teléfono, mostrará esa ronda. TOP/BOTTOM se infiere automáticamente al observar aumentos de puntuación, cambios de objetivos previamente leídos o una secundaria nueva sin puntos que aparece después de la lectura inicial, incluso en listas parcialmente visibles. No requiere seleccionar el turno en el panel. El orden se toma de Tabletop Battles: el primer jugador de la interfaz juega TOP y el segundo BOTTOM. Aunque conectes en ronda 5, la siguiente actividad de puntuación permite identificar la mitad sin esperar otra ronda. La primera lectura por sí sola no determina el turno activo; hasta identificarlo se muestra solo la ronda. El último turno identificado se conserva dentro de esa ronda, incluso al cambiar de pantalla o reiniciar. La detección se guarda al reiniciar y es independiente del intercambio de lados. Es una estimación: puntos registrados fuera de turno o correcciones al alza pueden confundirla. Recuerda las cartas vistas por jugador y ronda para no confundir su reaparición al desplazar la pantalla con un robo. Una carta sin puntos nunca vista antes puede ser una carta antigua que estaba fuera de pantalla: en ese caso la estimación puede adelantarse. Bajar puntos o gastar CP no cambia el turno; cambios simultáneos en ambos jugadores lo conservan. El nombre general de la primaria no siempre está expuesto; se muestran sus condiciones de puntuación.
+Al avanzar a la ronda siguiente conserva las secundarias sin puntuar hasta confirmar la lista actual y mantiene las condiciones de primaria, reiniciando sus marcas y contadores. Los totales acumulados se conservan; los CP conservan el último valor leído hasta que el teléfono los actualice. Las lecturas parciales no eliminan misiones fuera de pantalla. No arrastra misiones al consultar rondas anteriores o saltar varias rondas. Si consultas una ronda histórica en el teléfono, mostrará esa ronda. TOP/BOTTOM se infiere automáticamente al observar una secundaria nueva sin puntos que aparece después de la lectura inicial, incluso en listas parcialmente visibles. No requiere seleccionar el turno en el panel. El orden se toma de Tabletop Battles: el primer jugador de la interfaz juega TOP y el segundo BOTTOM. Aunque conectes en ronda 5, la siguiente secundaria nueva permite identificar la mitad sin esperar otra ronda. La primera lectura por sí sola no determina el turno activo; hasta identificarlo se muestra solo la ronda. El último turno identificado se conserva dentro de esa ronda, incluso al cambiar de pantalla o reiniciar. La detección se guarda al reiniciar y es independiente del intercambio de lados. Es una estimación: la lectura parcial puede ocultar cuándo se robó una carta. Recuerda las cartas vistas por jugador y ronda para no confundir su reaparición al desplazar la pantalla con un robo. Una carta sin puntos nunca vista antes puede ser una carta antigua que estaba fuera de pantalla: en ese caso la estimación puede adelantarse. Puntuar primarias o secundarias, marcar objetivos y gastar o ganar CP no cambia el turno; nuevas cartas simultáneas de ambos jugadores conservan el turno anterior. El nombre general de la primaria no siempre está expuesto; se muestran sus condiciones de puntuación.
 
 ## Solución de problemas
 
@@ -633,3 +670,61 @@ El lector recuerda el teléfono por su identificador físico en `phone-connectio
 Activa la depuración inalámbrica y empareja el computador con el teléfono en Android. Tener activada la opción no equivale a estar emparejado. ADB debe poder descubrir el teléfono en la red. Si el descubrimiento no funciona, conecta previamente con `adb connect IP:PUERTO` usando la dirección que Android muestra en Depuración inalámbrica. El overlay puede recuperar direcciones conocidas y servicios inalámbricos que anuncien el identificador del teléfono guardado; no activa puertos de depuración ni empareja dispositivos desconocidos automáticamente.
 
 Para elegir otro teléfono, inicia con `--serial SERIAL` usando su identificador de `adb devices -l`. Si hay varios teléfonos diferentes y ninguno seleccionado, el lector pide seleccionar uno. El panel distingue conexión USB, Wi-Fi y espera de una ronda legible. Al enviar Tabletop Battles al fondo se conserva el último marcador; al volver a la ronda, la lectura se reanuda. Durante una reconexión puede haber una pausa de unos segundos.
+
+## YouTube Live → voz local (macOS)
+
+Función opcional del mismo backend, independiente de OBS y del teléfono. Usa OAuth de solo lectura, descubre el directo activo de la cuenta autorizada y recibe el chat por `liveChatMessages.streamList` (gRPC). La voz sale por el dispositivo predeterminado de macOS; volumen y salida se cambian en macOS. No usa TTS externo ni IA.
+
+### Primera autorización
+
+1. Crea un proyecto en [Google Cloud](https://console.cloud.google.com/) y habilita **YouTube Data API v3**.
+2. Configura Google Auth Platform, añade tu cuenta como usuario de prueba si corresponde y crea un cliente OAuth **Aplicación de escritorio**. Descarga el JSON fuera del repositorio.
+3. Desde este repositorio, ejecuta:
+
+```sh
+node cli.js youtube-auth --client-secret "$HOME/Downloads/client_secret.json"
+```
+
+Con el paquete instalado, el equivalente es `wargaming-overlay youtube-auth --client-secret /ruta/al/archivo.json`. Se abre el navegador: elige la cuenta/canal correcto y concede lectura. El retorno escucha temporalmente solo en `127.0.0.1`, valida `state` y usa PKCE. No se deben pegar tokens en la terminal ni en el chat.
+
+Esta V1 guarda cliente OAuth y tokens en `~/.config/wargaming-overlay/youtube/`, archivos con permisos `0600`, fuera del repositorio y de los recursos HTTP del overlay. El refresh token se reutiliza al reiniciar y renueva el acceso automáticamente. Para desconectar la cuenta, detén el backend, revoca el acceso en tu cuenta Google y elimina esa carpeta. No hay almacenamiento en Keychain en esta versión.
+
+**Google limita a siete días los refresh tokens de proyectos externos en modo Testing** para estos permisos. Antes de usarlo permanentemente, revisa el estado de publicación del proyecto. Una revocación o expiración requiere repetir `youtube-auth`; no se puede garantizar una autorización eterna.
+
+### Arranque y prueba
+
+```sh
+YOUTUBE_CHAT_TTS_ENABLED=true npm start
+npm run test-tts
+```
+
+La segunda instrucción ejecuta tres mensajes falsos, sin YouTube ni OBS. No la ejecutes a la vez que otro lector TTS: la exclusión de voces es por proceso. Para desactivar el chat, omite la variable o usa `YOUTUBE_CHAT_TTS_ENABLED=false`. No se inicia ninguna conexión YouTube cuando está desactivado. En Windows/Linux el overlay continúa pero esta voz no se inicia.
+
+Si no hay directo con chat, comprueba cada 60 segundos. Al conectar omite el historial anterior a la conexión. Mantiene en memoria el identificador del chat, el cursor de continuación y hasta 1.000 IDs recientes. Ante una desconexión reintenta a 1, 2, 5, 10 y como máximo 30 segundos; una única conexión por instancia. Al terminar el directo o deshabilitarse el chat cancela la voz pendiente y vuelve a buscar. Si hay varios directos simultáneos, elige el primero por ID y lo indica en el log.
+
+Los mensajes normales se transforman en eventos `youtube_chat_message`; los eventos administrativos, Super Chat y membresías no se leen en V1. No se escriben mensajes en disco. La terminal muestra mensajes sanitizados y estados YouTube/TTS, sin tokens. Los fallos de OAuth, chat o voz no detienen el overlay.
+
+### Ajustes sencillos
+
+Opcionalmente crea `youtube-tts.json` dentro de la carpeta de datos que muestra el backend al iniciar:
+
+```json
+{
+  "enabled": true,
+  "maxMessageLength": 300,
+  "maxQueueLength": 10,
+  "readUsername": true,
+  "filterUrls": true,
+  "extraBlockedTerms": []
+}
+```
+
+Reinicia el backend para aplicar cambios. Los mensajes se truncan sin cortar palabras cuando es posible, los nombres se limitan a 40 caracteres y las URLs se sustituyen por «Enlace». Si la cola está llena, elimina el pendiente más antiguo; nunca interrumpe una voz para superponer otra. Al detener el backend cancela la voz activa y descarta los pendientes. Cada mensaje usa un proceso nuevo de `/usr/bin/say`, sin shell, sin seleccionar dispositivo, y con un tiempo máximo de 120 segundos.
+
+La moderación es un filtro local pequeño de patrones ES/EN para insultos discriminatorios graves, amenazas directas, llamados a violencia y algunas expresiones sexuales explícitas. Sustituye los fragmentos por «censurado» y descarta mensajes sin contenido restante. Conserva groserías coloquiales como «qué mierda de tirada» o «ese weón tuvo demasiada suerte». **No entiende contexto ni garantiza detectar todas las variantes o idiomas**; amplía `extraBlockedTerms` según el canal. También filtra los nombres y elimina instrucciones de voz embebidas antes de ejecutar `say`.
+
+### Verificación
+
+`npm test` incluye OAuth con callback local y renovación simulada, gRPC local real, descubrimiento de directos, continuación tras desconexión, duplicados, fin del directo, backoff, sanitización y cola sin superposición. No requiere credenciales ni envía mensajes a YouTube. La prueba real de autorización, recepción de un directo y cambio físico de salida de audio requiere la cuenta del canal y comprobación del operador.
+
+Referencias oficiales: [OAuth de escritorio](https://developers.google.com/youtube/v3/guides/auth/installed-apps), [descubrimiento de directos](https://developers.google.com/youtube/v3/live/docs/liveBroadcasts/list), [chat por streaming](https://developers.google.com/youtube/v3/live/streaming-live-chat), [duración de tokens en Testing](https://developers.google.com/identity/protocols/oauth2).

@@ -29,7 +29,7 @@
     const label=roundLabel(layout,game,Number.isInteger(game?.round));
     const first=game?.turn?.orderSource==='ui-order' ? game.turn.firstPlayer : null;
     const second=first ? game.players?.find(p=>p.name!==first)?.name : null;
-    return {label,order:first && second ? `TOP: ${first} · BOTTOM: ${second}` : 'Orden de jugadores pendiente de lectura',reason:game?.turn?.reason || 'Esperando actividad de puntuación en Tabletop Battles.'};
+    return {label,order:first && second ? `TOP: ${first} · BOTTOM: ${second}` : 'Orden de jugadores pendiente de lectura',reason:game?.turn?.reason || 'Esperando nuevas secundarias en Tabletop Battles.'};
   }
   const api = {swapPlayers, matchPlayers, roundLabel, turnStatus};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

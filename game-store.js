@@ -10,7 +10,7 @@ function mergeGame(previous,incoming){
   const prior=samePlayers?previous.players.find(old=>old.name===p.name):null;
   const old=same?prior:advance?{
    // Primary/secondary totals are cumulative; objective progress belongs to the round.
-   primary:prior.primary,secondary:prior.secondary,
+   cp:prior.cp,primary:prior.primary,secondary:prior.secondary,
    secondaries:prior.secondaries?.filter(m=>m.score===0),
    primaryObjectives:prior.primaryObjectives?.map(m=>({...m,checked:m.checked==null?null:false,counter:m.counter==null?null:0})),
    observedAt:prior.observedAt

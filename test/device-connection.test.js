@@ -59,3 +59,25 @@ test('background app preserves scores and returning to the round resumes updates
  const next=mergeGame(waiting,{round:1,connected:true,phoneConnected:true,transport:'wifi',players:[{name:'A',score:8},{name:'B',score:2}]});
  assert.equal(next.players[0].score,8);assert.equal(next.connected,true);
 });
+test('USB prepares current advertised Wi-Fi before unplugging and prioritizes it over stale ports',()=>{
+ const code=`
+from device_connection import DeviceConnection
+calls=[]
+rows='USB device'
+def adb(*args):
+ calls.append(args)
+ if args[0]=='devices': return rows
+ if args[0]=='-s': return 'PHONE'
+ if args[0]=='mdns': return 'adb-PHONE-abc _adb-tls-connect._tcp. 192.168.1.83:36171'
+ if args[0]=='connect': return 'connected to '+args[1]
+ return ''
+c=DeviceConnection(run=adb,now=lambda:100)
+c.aliases={'192.168.1.1:1000','192.168.1.2:1000','192.168.1.3:1000','192.168.1.4:1000'}
+assert c.select()['transport']=='usb'
+assert [x for x in calls if x[0]=='connect']==[('connect','192.168.1.83:36171')]
+assert '192.168.1.83:36171' in c.aliases
+rows='192.168.1.83:36171 device'
+assert c.select()['transport']=='wifi'
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+});

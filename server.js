@@ -14,17 +14,31 @@ function persistGame() { fs.writeFileSync(gamePath + '.tmp', JSON.stringify(game
 const readerOptions = { env: { ...process.env, PYTHONIOENCODING: "utf-8" }, stdio: ['ignore', 'pipe', 'inherit'] };
 if (process.env.SUDO_UID) { readerOptions.uid = Number(process.env.SUDO_UID); readerOptions.gid = Number(process.env.SUDO_GID); }
 let reader;
+let youtube;
 function startReader(){
-let lastError = '';
+const report = require('./reader-status').createReaderStatus();
+console.log('Buscando teléfono por USB o Wi-Fi… Esperando la primera lectura de Tabletop Battles.');
+let lastResponse=Date.now();
+let stalled=false;
+const watchdog=setInterval(()=>{
+ if(!stalled && Date.now()-lastResponse>30000){
+  stalled=true;console.error('El lector lleva más de 30 segundos sin responder. Comprueba el teléfono y la conexión; sigo esperando.');
+ }
+},5000);
+watchdog.unref();
 reader = spawn(process.env.OVERLAY_PYTHON || 'python3', [path.join(__dirname, 'reader.py')], readerOptions);
 readline.createInterface({ input: reader.stdout }).on('line', line => {
-  try { const incoming = JSON.parse(line); game = mergeGame(game, incoming); persistGame(); if (incoming.error !== lastError) { if (incoming.error) console.error(incoming.error); else if(lastError) console.log('Teléfono conectado. Lectura recuperada.'); lastError = incoming.error; } } catch (e) { console.error('Lectura:', e.message); }
+  try {
+   const incoming=JSON.parse(line);lastResponse=Date.now();
+   if(stalled){console.log('El lector volvió a responder.');stalled=false;}
+   game=mergeGame(game,incoming);persistGame();report(incoming);
+  } catch(e){console.error('Error procesando la lectura:',e.message);}
 });
-reader.on('error', e => console.error('Lector:', e.message));
-reader.on('exit', () => { game = mergeGame(game, {connected:false, error:'Lector detenido. Reinicia el servidor.'}); persistGame(); });
+reader.on('error', e => {clearInterval(watchdog);console.error('No se pudo iniciar el lector:',e.message);});
+reader.on('exit', (code,signal) => { clearInterval(watchdog);console.error(`Lector detenido (${signal||'código '+code}). Reinicia el servidor.`); game = mergeGame(game, {connected:false, error:'Lector detenido. Reinicia el servidor.'}); persistGame(); });
 }
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); process.exit(); });
-process.on('exit', () => reader?.kill());
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); youtube?.stop(); process.exit(); });
+process.on('exit', () => {reader?.kill();youtube?.queue?.clear();});
 const {syncStats} = require('./listhammer');
 const root = path.join(__dirname, 'public');
 const statePath = path.join(dataDir, 'overlay-state.json');
@@ -109,4 +123,4 @@ const server = http.createServer(async (req, res) => {
   send(res, 200, types[path.extname(filePath)] || 'application/octet-stream', fs.readFileSync(filePath));
 });
 server.on('error', e => { console.error(e.code==='EADDRINUSE' ? 'El puerto está ocupado. Detén el otro servidor o usa --port 8766.' : 'No se pudo iniciar: '+e.message); reader?.kill(); process.exitCode=1; });
-server.listen(Number(process.env.PORT || 8765), '127.0.0.1', () => { startReader(); syncStats(dataDir).then(stats => { statsCache = stats; announcements.refresh(); }).catch(e => console.error('Listhammer: ' + e.message + ' Se conserva la última copia completa, si existe. El overlay sigue funcionando; se reintentará en el próximo inicio.')); console.log(`Panel: http://127.0.0.1:${process.env.PORT || 8765}\nOBS: http://127.0.0.1:${process.env.PORT || 8765}/overlay-art.html\nDatos: ${dataDir}\nCtrl+C para detener.`); });
+server.listen(Number(process.env.PORT || 8765), '127.0.0.1', () => { startReader(); youtube=require('./youtube').startYouTube(dataDir); syncStats(dataDir).then(stats => { statsCache = stats; announcements.refresh(); }).catch(e => console.error('Listhammer: ' + e.message + ' Se conserva la última copia completa, si existe. El overlay sigue funcionando; se reintentará en el próximo inicio.')); console.log(`Panel: http://127.0.0.1:${process.env.PORT || 8765}\nOBS: http://127.0.0.1:${process.env.PORT || 8765}/overlay-art.html\nDatos: ${dataDir}\nCtrl+C para detener.`); });

@@ -1,6 +1,6 @@
 {
   "name": "@ing.jorgeu/wargaming-overlay",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
     "wargaming-overlay": "cli.js"
@@ -9,7 +9,8 @@
     "start": "node cli.js start",
     "test": "node --test",
     "prepublishOnly": "npm test",
-    "facts:coverage": "node scripts/fact-coverage.js"
+    "facts:coverage": "node scripts/fact-coverage.js",
+    "test-tts": "node scripts/tts-demo.js"
   },
   "engines": {
     "node": ">=20"
@@ -21,6 +22,7 @@
     "reader.py",
     "battle_reader.py",
     "game-store.js",
+    "reader-status.js",
     "turn-tracker.js",
     "public",
     "README.md",
@@ -33,7 +35,10 @@
     "data/faction-facts.json",
     "factions.js",
     "scripts/fact-coverage.js",
-    "device_connection.py"
+    "device_connection.py",
+    "youtube",
+    "tts",
+    "scripts/tts-demo.js"
   ],
   "license": "0BSD",
   "publishConfig": {
@@ -50,5 +55,9 @@
     "wargaming",
     "adb",
     "cli"
-  ]
+  ],
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.5",
+    "@grpc/proto-loader": "^0.8.1"
+  }
 }

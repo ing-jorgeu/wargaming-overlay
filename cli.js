@@ -7,6 +7,7 @@ const version=require('./package.json').version;
 const help=`wargaming-overlay ${version} — overlay local para OBS
 
   wargaming-overlay start                  Inicia el overlay y lector
+  wargaming-overlay youtube-auth --client-secret RUTA  Autoriza YouTube una vez
   wargaming-overlay doctor                 Revisa Python, ADB y teléfono
   wargaming-overlay setup                  Guía de configuración
   wargaming-overlay setup --install-adb    Instala ADB con el gestor del sistema
@@ -25,14 +26,16 @@ Por defecto: ~/Library/Application Support/wargaming-overlay en macOS;
 %LOCALAPPDATA%/wargaming-overlay en Windows; ~/.local/share/wargaming-overlay en Linux. Solo escucha en 127.0.0.1.
 Ctrl+C detiene el servidor y lector. El último estado queda guardado.
 `;
-function main(){
+async function main(){
  const args=process.argv.slice(2);
  if(args.includes('--help')||args.includes('-h')){console.log(help);return}
  if(args.includes('--version')){console.log(version);return}
  const command=args.shift()||'start',options={};let source;
- const keys={'--port':'port','--serial':'serial','--interval':'interval','--adb':'adb','--python':'python','--data-dir':'dataDir'};
+ const keys={'--port':'port','--serial':'serial','--interval':'interval','--adb':'adb','--python':'python','--data-dir':'dataDir','--client-secret':'clientSecret'};
  while(args.length){const a=args.shift();if(a==='--install-adb')options.install=true;else if(a==='--dry-run')options.dryRun=true;else if(keys[a]){const value=args.shift();if(!value||value.startsWith('--'))throw Error(`Falta el valor de ${a}`);options[keys[a]]=value}else if(command==='migrate'&&!source&&!a.startsWith('-'))source=a;else throw Error(`Argumento desconocido: ${a}. Usa --help.`)}
- if(!['start','doctor','setup','migrate'].includes(command))throw Error('Comando desconocido. Usa --help.');
+ if(!['start','doctor','setup','migrate','youtube-auth'].includes(command))throw Error('Comando desconocido. Usa --help.');
+ if(options.clientSecret && command!=='youtube-auth')throw Error('--client-secret solo se usa con youtube-auth.');
+ if(command==='youtube-auth'){await new (require('./youtube/auth').Auth)().authorize(options.clientSecret);return;}
  const dataDir=path.resolve(options.dataDir||dataDirectory());
  if((options.install||options.dryRun)&&command!=='setup')throw Error('--install-adb y --dry-run solo se usan con setup.');
  if(command==='migrate'){
@@ -75,4 +78,4 @@ function main(){
  process.env.OVERLAY_DATA_DIR=dataDir;process.env.PORT=String(port);process.env.OVERLAY_ADB=r.adb;process.env.OVERLAY_PYTHON=r.python;process.env.OVERLAY_SERIAL=options.serial||'';process.env.OVERLAY_INTERVAL=String(interval);
  require('./server');
 }
-try{main()}catch(e){console.error('Error: '+e.message);process.exitCode=1}
+main().catch(e=>{console.error('Error: '+e.message);process.exitCode=1;});
