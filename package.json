@@ -22,6 +22,7 @@
     "reader.py",
     "battle_reader.py",
     "game-store.js",
+    "rosters.js",
     "reader-status.js",
     "turn-tracker.js",
     "public",

@@ -728,3 +728,59 @@ La moderación es un filtro local pequeño de patrones ES/EN para insultos discr
 `npm test` incluye OAuth con callback local y renovación simulada, gRPC local real, descubrimiento de directos, continuación tras desconexión, duplicados, fin del directo, backoff, sanitización y cola sin superposición. No requiere credenciales ni envía mensajes a YouTube. La prueba real de autorización, recepción de un directo y cambio físico de salida de audio requiere la cuenta del canal y comprobación del operador.
 
 Referencias oficiales: [OAuth de escritorio](https://developers.google.com/youtube/v3/guides/auth/installed-apps), [descubrimiento de directos](https://developers.google.com/youtube/v3/live/docs/liveBroadcasts/list), [chat por streaming](https://developers.google.com/youtube/v3/live/streaming-live-chat), [duración de tokens en Testing](https://developers.google.com/identity/protocols/oauth2).
+
+## Listas de ejército para OBS
+
+En el administrador abre **Listas de ejército**. Cada jugador tiene su propia lista y un enlace **Abrir lista para OBS**. El nombre, la facción y los destacamentos se editan en **Partida** y aparecen en la cabecera de la lista.
+
+1. Pulsa **Añadir unidad** e introduce su nombre.
+2. Añade, si corresponde, el nombre de una mejora, varios personajes (uno por línea) y una nota breve.
+3. Ordena las unidades arrastrando el asa **⠿** y soltándola antes o después de otra unidad. **Subir / Bajar** también está disponible para teclado.
+4. Marca **En reservas** para mostrar la etiqueta de reserva, o **Unidad destruida** para tacharla y atenuarla. Una unidad destruida deja de mostrar la etiqueta En reservas.
+5. Pulsa **Guardar lista**. Los cambios llegan a OBS sin refrescar la fuente. Las modificaciones quedan como borrador hasta guardarlas; el navegador avisa si intentas cerrar con cambios pendientes.
+
+En OBS crea dos escenas nuevas, cada una con una fuente **Navegador**, y pega el enlace de su jugador. Configura **1920 × 1080** (se escala proporcionalmente en otras resoluciones 16:9). Puedes cambiar de escena libremente. La URL lleva un identificador estable del jugador: sigue mostrando su lista aunque intercambies izquierda/derecha. Las etiquetas de color sí siguen el lado actual. Toda la lista aparece en una sola pantalla, sin páginas ni rotación. El diseño ajusta columnas y tamaño de texto para que quepa; las listas muy extensas tendrán texto más pequeño. Las unidades consecutivas con el mismo nombre se agrupan bajo un encabezado con su cantidad; cada copia conserva sus personajes, mejora, notas y estado. Si otra unidad interrumpe la secuencia, se inicia un grupo nuevo.
+
+La vista está en `/army-list.html?player=IDENTIFICADOR`; copia la URL exacta desde el panel. También existen `/army-list.html?side=left` y `?side=right` para fuentes que deban seguir un lado, en vez de a una persona.
+
+Puedes asignar una **URL de imagen de fondo** a cada jugador desde el editor. Debe ser un enlace HTTP/HTTPS directo y accesible desde OBS; deja el campo vacío para usar el fondo predeterminado. La imagen se carga en el navegador, no en el servidor, y se oscurece para mantener la legibilidad. El fondo se guarda junto con la lista y se incluye al exportar JSON.
+
+### Importar y exportar
+
+**Exportar JSON** descarga la lista actual, incluidos los cambios del borrador. **Importar JSON** permite recuperarla o cargar un archivo con este formato:
+
+```json
+{
+  "backgroundUrl": "",
+  "units": [
+    {
+      "name": "Rubric Marines",
+      "enhancement": "Nombre de la mejora",
+      "characters": ["Ahriman", "Exalted Sorcerer"],
+      "notes": "Vigilar el objetivo central",
+      "deepStrike": true,
+      "destroyed": false
+    }
+  ]
+}
+```
+
+También se acepta directamente el array de unidades. Los identificadores se generan al importar. La importación queda como borrador: revisa y guarda. No se interpretan automáticamente PDFs ni exportaciones de otras aplicaciones en esta versión.
+
+Límites: 80 unidades por jugador; nombre y mejora hasta 100 caracteres; hasta 8 personajes de 80 caracteres cada uno; notas hasta 160 caracteres. No se impone que los nombres de unidades sean distintos: puedes tener varias escuadras iguales.
+
+Las listas se guardan en `rosters.json` dentro de la carpeta de datos, fuera del paquete npm. Para respaldarlas, conserva también `overlay-state.json`, que contiene el vínculo de cada jugador. Reiniciar el servicio o restablecer los puntos de la partida no borra las listas. Al preparar otra partida puedes editar o importar las nuevas listas. Si otra pestaña modificó una lista, el servidor rechaza sobrescribirla con un borrador antiguo; exporta tu borrador si quieres conservarlo y recarga para obtener la versión actual.
+
+Si el panel indica que el servicio está desactualizado al guardar un fondo, detén `npm start` con Ctrl+C y ejecútalo de nuevo. Recargar el navegador no actualiza el servidor Node. La URL queda en el borrador para guardarla después del reinicio. El overlay de listas ocupa toda la fuente de OBS incluso si no usa una proporción 16:9.
+
+Cada lista admite un nombre opcional (máximo 80 caracteres), editable en «Listas de ejército». Se muestra encima del nombre del jugador en OBS y se conserva al importar/exportar JSON mediante el campo `name`. Sin nombre se muestra «ORDEN DE BATALLA». Reinicia el servicio después de actualizar para activar el guardado del campo.
+
+Marca **Battleshocked** en una unidad y guarda la lista para mostrar su etiqueta ámbar en OBS. El estado se conserva en el campo `battleshocked` del JSON; las listas antiguas lo toman como falso. Las unidades destruidas ocultan esta etiqueta. Desmárcalo cuando deje de aplicarse.
+
+Cuando una unidad tiene personajes asignados, sus nombres son el título principal y debajo aparece «Lidera:» con el nombre de la unidad. En los grupos consecutivos cada unidad conserva sus propios personajes y estados.
+
+Los enlaces del administrador para OBS son fijos por color: `/army-list.html?side=blue` y `/army-list.html?side=red`. Usa «Copiar URL azul/roja» para copiarlos al portapapeles. Al intercambiar jugadores muestran la lista del nuevo ocupante de ese color, sin cambiar la URL en OBS. Los enlaces anteriores siguen siendo compatibles.
+
+Las listas se guardan automáticamente al dejar de escribir brevemente, reordenar o cambiar estados. El panel muestra el estado del guardado y reintenta si falla la conexión. Completa los nombres de las unidades nuevas para guardar. No cierres el panel mientras indique cambios pendientes o errores.
+
+Si `streamList` rechaza las credenciales con código 16, el chat cambia automáticamente a consultas HTTP de respaldo. Respeta el intervalo de YouTube con un mínimo de 15 segundos; puede haber esa demora adicional en la lectura. Este modo consume cuota por consulta (5 unidades, hasta unas 1.200 por hora a intervalos de 15 segundos).

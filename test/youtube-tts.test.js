@@ -127,5 +127,6 @@ test('stream permission failure and token expiry reconnect without concurrent st
   calls++;active++;max=Math.max(max,active);
   try{throw Object.assign(Error('fail'),{code:calls===1?16:calls===2?9:14});}finally{active--;}
  }});
+ service.poll=service.stream; // Exercise reconnect logic without real HTTP.
  await service.start().task;assert.equal(max,1);assert.equal(invalidated,1);assert.equal(calls,3);
 });

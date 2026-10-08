@@ -24,7 +24,8 @@ async function saveLayout(swap=false){
   const next=swap?MatchView.swapPlayers(form):form;
   const response=await fetch('/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)});
   if(!response.ok)throw Error('No se pudo guardar');
-  state=next;renderPlayers();
+  state=await fetch('/state').then(r=>r.json());renderPlayers();
+  window.dispatchEvent(new Event('layout-saved'));
   document.querySelector('#saved').textContent=swap?'Jugadores intercambiados. Overlay actualizado.':'Overlay actualizado.';
  }catch{
   document.querySelector('#saved').textContent='No se pudo confirmar el cambio. Comprueba la conexión con el servidor y recarga el panel antes de intentarlo de nuevo.';

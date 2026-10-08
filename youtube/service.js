@@ -3,12 +3,13 @@ const {setTimeout:delay}=require('node:timers/promises');
 const {Auth}=require('./auth');
 const {findBroadcast}=require('./live-broadcast');
 const {streamChat,normalize}=require('./live-chat');
+const {pollChat}=require('./poll-chat');
 const {SpeechQueue}=require('../tts/queue');
 const {sanitize}=require('../tts/sanitizer');
 const backoff=[1000,2000,5000,10000,30000];
 class YouTubeService extends EventEmitter {
- constructor({config={},auth=new Auth(),discover=findBroadcast,stream=streamChat,queue,log=console.log,sleep=(ms,signal)=>delay(ms,null,{signal}),now=Date.now}={}){
-  super();this.config=config;this.auth=auth;this.discover=discover;this.stream=stream;this.log=log;this.sleep=sleep;this.now=now;
+ constructor({config={},auth=new Auth(),discover=findBroadcast,stream=streamChat,poll=pollChat,queue,log=console.log,sleep=(ms,signal)=>delay(ms,null,{signal}),now=Date.now}={}){
+  super();this.config=config;this.auth=auth;this.discover=discover;this.stream=stream;this.poll=poll;this.polling=false;this.log=log;this.sleep=sleep;this.now=now;
   this.queue=queue||new SpeechQueue({maxQueueLength:config.maxQueueLength||10,log});this.state='DISCONNECTED';this.seen=new Set();this.controller=new AbortController();this.chat=null;this.pageToken=undefined;this.task=null;
  }
  status(state,message){if(this.state!==state||this.lastMessage!==message){this.state=state;this.lastMessage=message;this.log('[YouTube] '+message);}}
@@ -27,8 +28,8 @@ class YouTubeService extends EventEmitter {
      this.log(`[YouTube] Directo detectado${broadcast.multiple?' (hay varios; se usa el primero por ID)':''}.`);
     }
     let ended=false;
-    this.status('CONNECTED_TO_CHAT','Conectando al chat en vivo mediante streamList…');
-    for await(const batch of this.stream({auth:this.auth,liveChatId:this.chat,pageToken:this.pageToken,signal})){
+    this.status('CONNECTED_TO_CHAT',this.polling?'Conectando al chat mediante HTTP (respaldo, cada 15 s)…':'Conectando al chat en vivo mediante streamList…');
+    for await(const batch of (this.polling?this.poll:this.stream)({auth:this.auth,liveChatId:this.chat,pageToken:this.pageToken,signal})){
      if(signal.aborted)break;
      failures=0;this.status('CONNECTED_TO_CHAT','Chat conectado; esperando mensajes nuevos.');
      if(batch.offlineAt || (batch.items||[]).some(i=>i.snippet?.type===4)){ended=true;break;}
@@ -50,12 +51,15 @@ class YouTubeService extends EventEmitter {
     if(!signal.aborted)throw Error('Chat connection closed');
    }catch(e){
     if(signal.aborted)break;
-    if(e.code===16)this.auth.invalidate();
+    if(e.code===16){
+     this.auth.invalidate();
+     if(!this.polling){this.polling=true;this.pageToken=undefined;this.status('DISCONNECTED','streamList rechazó las credenciales. Cambiando a HTTP de respaldo (cada 15 s).');continue;}
+    }
     if([5,9].includes(e.code)){this.endChat();await this.sleep(60000,signal);continue;}
     if(e.code===3)this.pageToken=undefined;
     const ms=backoff[Math.min(failures++,backoff.length-1)];
     // Do not print upstream payloads or request objects: they may contain credentials.
-    this.status('DISCONNECTED',`Conexión/autorización no disponible${Number.isInteger(e.code)?' (código '+e.code+')':''}. Reintento en ${ms/1000}s. Si persiste, revisa OAuth, API y cuota.`);
+    this.status('DISCONNECTED',e.code===16?`YouTube rechazó las credenciales (código 16). Renovando el token; reintento en ${ms/1000}s. Si se repite, ejecuta node cli.js youtube-auth para autorizar el canal de nuevo.`:`Conexión/autorización no disponible${Number.isInteger(e.code)?' (código '+e.code+')':''}. Reintento en ${ms/1000}s. Si persiste, revisa OAuth, API y cuota.`);
     await this.sleep(ms,signal);
    }
   }

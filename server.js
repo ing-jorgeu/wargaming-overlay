@@ -51,8 +51,17 @@ const defaultState = {
 let state = defaultState;
 try { state = { ...defaultState, ...JSON.parse(fs.readFileSync(statePath, 'utf8')) }; }
 catch { /* First run: use the defaults. */ }
+const {linkPlayers,validateUnits,validateBackground,validateName}=require('./rosters');
+state=linkPlayers(state,state);
+saveState();
+const rostersPath=path.join(dataDir,'rosters.json');
+let rosters={};
+try{rosters=JSON.parse(fs.readFileSync(rostersPath,'utf8'));}catch{}
+function rosterSnapshot(){return {players:{left:state.left,right:state.right},rosters};}
+const rosterListeners=new Set();
+function broadcastRosters(){const msg=`data: ${JSON.stringify(rosterSnapshot())}\n\n`;for(const res of rosterListeners)res.write(msg);}
 const listeners = new Set();
-function broadcast() { const msg = `data: ${JSON.stringify(state)}\n\n`; listeners.forEach(r => r.write(msg)); }
+function broadcast() { const msg = `data: ${JSON.stringify(state)}\n\n`; listeners.forEach(r => r.write(msg)); broadcastRosters(); }
 function send(res, code, type, body) { res.writeHead(code, { 'Content-Type': type }); res.end(body); }
 function saveState() { const temporaryPath = `${statePath}.tmp`; fs.writeFileSync(temporaryPath, JSON.stringify(state, null, 2)); fs.renameSync(temporaryPath, statePath); }
 
@@ -69,11 +78,11 @@ const announcements = new Announcements({
 });
 const toastTimer = setInterval(() => { try { announcements.tick([...toastListeners.values()].includes('overlay')); } catch(e) { console.error('Mensajes: '+e.message); } }, 1000);
 toastTimer.unref();
-async function readToastBody(req) {
+async function readToastBody(req,limit=8192) {
   const chunks = []; let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 8192) throw new Error('El mensaje es demasiado largo.');
+    if (size > limit) throw new Error('El mensaje es demasiado largo.');
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
@@ -82,6 +91,25 @@ async function readToastBody(req) {
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control','no-store');
   const url = new URL(req.url, 'http://localhost');
+  if(url.pathname==='/rosters/events' && req.method==='GET'){
+    res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache',Connection:'keep-alive'});
+    rosterListeners.add(res);res.write(`data: ${JSON.stringify(rosterSnapshot())}\n\n`);
+    req.on('close',()=>rosterListeners.delete(res));return;
+  }
+  if(url.pathname==='/rosters' && req.method==='GET')return send(res,200,'application/json',JSON.stringify(rosterSnapshot()));
+  if(url.pathname.startsWith('/rosters/') && req.method==='POST'){
+    try{
+      const id=url.pathname.slice('/rosters/'.length);
+      if(![state.left.rosterId,state.right.rosterId].includes(id))return send(res,404,'application/json',JSON.stringify({error:'Jugador no encontrado. Recarga el panel.'}));
+      const input=await readToastBody(req,200000);
+      const old=rosters[id]||{revision:0,units:[]};
+      if(input.revision!==old.revision)return send(res,409,'application/json',JSON.stringify({error:'La lista cambió en otro panel. Recarga antes de guardar.'}));
+      const roster={revision:old.revision+1,name:validateName(input.name??old.name??''),units:validateUnits(input.units),backgroundUrl:validateBackground(input.backgroundUrl??old.backgroundUrl??'')};
+      const next={...rosters,[id]:roster};
+      fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;
+      broadcastRosters();return send(res,200,'application/json',JSON.stringify(roster));
+    }catch(e){return send(res,400,'application/json',JSON.stringify({error:e.message}));}
+  }
   if (url.pathname === '/toasts/events' && req.method === 'GET') {
     res.writeHead(200, {'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive'});
     toastListeners.set(res, url.searchParams.get('client') === 'control' ? 'control' : 'overlay');
@@ -112,7 +140,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/state' && req.method === 'GET') return send(res, 200, 'application/json', JSON.stringify(state));
   if (url.pathname === '/state' && req.method === 'POST') {
     let body = ''; req.on('data', c => body += c); req.on('end', () => {
-      try { state = JSON.parse(body); saveState(); broadcast(); announcements.refresh(); send(res, 200, 'application/json', JSON.stringify({ ok: true })); }
+      try { state = linkPlayers(JSON.parse(body),state); saveState(); broadcast(); announcements.refresh(); send(res, 200, 'application/json', JSON.stringify({ ok: true })); }
       catch { send(res, 400, 'application/json', JSON.stringify({ error: 'Invalid data' })); }
     }); return;
   }
