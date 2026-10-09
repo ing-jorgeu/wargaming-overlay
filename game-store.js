@@ -7,7 +7,8 @@ function mergeGame(previous,incoming){
  const same=samePlayers && previous.round===incoming.round;
  const advance=samePlayers && incoming.round===previous.round+1 && incoming.round>(previous.turn?.highestRound??previous.round);
  const players=incoming.players.map(p=>{
-  const prior=samePlayers?previous.players.find(old=>old.name===p.name):null;
+  let prior=samePlayers?previous.players.find(old=>old.name===p.name):null;
+  if(prior&&incoming.primarySchemaVersion===1&&previous.primarySchemaVersion!==1)prior={...prior,primaryObjectives:null};
   const old=same?prior:advance?{
    // Primary/secondary totals are cumulative; objective progress belongs to the round.
    cp:prior.cp,primary:prior.primary,secondary:prior.secondary,

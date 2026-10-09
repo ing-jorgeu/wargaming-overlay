@@ -54,3 +54,11 @@ test('CP survives round advance and restart until a fresh value including zero a
  assert.equal(mergeGame(g,other).players[0].cp,null);
  assert.equal(mergeGame(g,read(1)).players[0].cp,null);
 });
+test('new primary parser drops stale objective associations once without losing CP or secondaries',()=>{
+ const before=mergeGame(emptyGame(),read(1,missions,missions));
+ const fresh={...read(1,{}, {primaryObjectives:[{name:'Correct',details:'5VP',counter:1}]}),primarySchemaVersion:1};
+ const next=mergeGame(before,fresh);
+ assert.equal(next.players[0].primaryObjectives,null);assert.equal(next.players[0].cp,3);assert.deepEqual(next.players[0].secondaries,missions.secondaries);
+ assert.deepEqual(next.players[1].primaryObjectives,fresh.players[1].primaryObjectives);
+ const again=mergeGame(next,{...read(1),primarySchemaVersion:1});assert.deepEqual(again.players[1].primaryObjectives,next.players[1].primaryObjectives);
+});

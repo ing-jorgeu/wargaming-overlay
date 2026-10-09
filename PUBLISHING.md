@@ -6,7 +6,7 @@ Desde la raíz del repositorio:
 
 ```sh
 npm ci
-npm version 2.5.0 --no-git-tag-version
+npm version 3.0.0 --no-git-tag-version
 npm test
 npm pack --dry-run
 npm login

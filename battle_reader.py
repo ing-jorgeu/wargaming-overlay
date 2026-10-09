@@ -48,6 +48,9 @@ def parse(xml):
             if not details and label and i+2 < len(texts) and re.match(r'\d+VP', texts[i+1]) and texts[i+2].isdigit():
                 details = (None, t, texts[i+1])
                 counter_index = i+2
+            elif not details and label and i+2 < len(texts) and texts[i+1].isdigit() and re.match(r'\d+VP', texts[i+2]):
+                details = (None, t, texts[i+2])
+                counter_index = i+1
             elif not details and label and i>0 and i+1<len(texts) and re.match(r'\d+VP',texts[i-1]) and texts[i+1].isdigit():
                 details = (None, t, texts[i-1])
                 counter_index = i+1
@@ -91,7 +94,7 @@ def parse(xml):
             players[owner]['secondariesComplete'] = True
             if players[owner]['secondaries'] is None:
                 players[owner]['secondaries'] = []
-    return dict(round=rnd, half=None, players=players)
+    return dict(round=rnd, half=None, players=players, primarySchemaVersion=1)
 
 def merge(previous, fresh):
     now = time.time()

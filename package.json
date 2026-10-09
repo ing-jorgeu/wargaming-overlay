@@ -1,19 +1,21 @@
 {
   "name": "@ing.jorgeu/wargaming-overlay",
-  "version": "2.5.0",
+  "version": "3.0.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
-    "wargaming-overlay": "cli.js"
+    "wargaming-overlay": "cli.js",
+    "warhammer-overlay": "cli.js"
   },
   "scripts": {
     "start": "node cli.js start",
     "test": "node --test",
     "prepublishOnly": "npm test",
     "facts:coverage": "node scripts/fact-coverage.js",
-    "test-tts": "node scripts/tts-demo.js"
+    "test-tts": "node scripts/tts-demo.js",
+    "setup-tts": "node scripts/setup-kokoro.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "files": [
     "cli.js",
@@ -39,7 +41,8 @@
     "device_connection.py",
     "youtube",
     "tts",
-    "scripts/tts-demo.js"
+    "scripts/tts-demo.js",
+    "scripts/setup-kokoro.js"
   ],
   "license": "0BSD",
   "publishConfig": {
@@ -58,7 +61,13 @@
     "cli"
   ],
   "dependencies": {
+    "@echogarden/espeak-ng-emscripten": "0.3.5",
     "@grpc/grpc-js": "^1.14.5",
-    "@grpc/proto-loader": "^0.8.1"
+    "@grpc/proto-loader": "^0.8.1",
+    "onnxruntime-node": "1.30.0",
+    "onnxruntime-web": "1.30.0"
+  },
+  "optionalDependencies": {
+    "node-cpal": "1.0.0"
   }
 }

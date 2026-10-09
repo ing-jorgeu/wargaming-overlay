@@ -98,3 +98,17 @@ for value in [0,3]:
 `;
  const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
 });
+test('adjacent label counter rule rows keep their own rules and player',()=>{
+ const code=`
+from battle_reader import parse
+from xml.etree.ElementTree import Element, SubElement, tostring
+r=Element('hierarchy')
+for text in ['10-18 Seba vs Bruno','SECONDARY: 0/45','Bruno','PRIMARY: 8/45','Outside','1','3VP | End of Your Turn','Within','1','5VP | End of Your Turn','SECONDARY: 0/45','Round 1']:
+ SubElement(r,'node',{'package':'com.goonhammer.ttba','content-desc':text})
+s=parse(tostring(r,encoding='unicode'))
+assert s['players'][0]['primaryObjectives'] is None
+m=s['players'][1]['primaryObjectives']
+assert [(x['name'],x['details'],x['counter']) for x in m]==[('Outside','3VP | End of Your Turn',1),('Within','5VP | End of Your Turn',1)]
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+});

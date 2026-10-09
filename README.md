@@ -25,7 +25,7 @@ El paquete está publicado en [npm como @ing.jorgeu/wargaming-overlay](https://w
 
 | Dependencia | Requisito y función | Descarga oficial |
 | --- | --- | --- |
-| Node.js y npm | Node 20 o posterior; preferir una versión LTS mantenida. Ejecuta el CLI y servidor. npm viene con las instalaciones habituales de Node. | [Node.js](https://nodejs.org/en/download/) |
+| Node.js y npm | Node 22 o posterior; preferir una versión LTS mantenida. Ejecuta el CLI y servidor. npm viene con las instalaciones habituales de Node. | [Node.js](https://nodejs.org/en/download/) |
 | Python | Python 3.8 o posterior; preferir una versión mantenida. Interpreta el XML de Android. | [Python](https://www.python.org/downloads/) |
 | ADB | Android SDK Platform-Tools. Comunica el equipo con el teléfono. | [Platform-Tools](https://developer.android.com/tools/releases/platform-tools) |
 | OBS Studio | Fuente Navegador disponible. Muestra el overlay sobre el vídeo. | [OBS Studio](https://obsproject.com/download) |
@@ -372,15 +372,18 @@ Instala las dependencias con `npm ci` (o `npm install` si actualizas dependencia
 | `npm start` | Inicia el backend desde este checkout. |
 | `npm start -- --port 8766 --interval 5` | Pasa opciones al backend; el separador `--` es necesario. |
 | `npm test` | Ejecuta las pruebas automatizadas; no necesita el canal ni reproduce audio. |
-| `npm run test-tts` | Reproduce tres mensajes de prueba por la salida predeterminada de macOS. |
+| `wargaming-overlay --test-tts "Hola"` | Lee un texto con la configuración TTS y termina; no inicia overlay, YouTube ni ADB. |
+| `npm run test-tts` | Reproduce tres mensajes de prueba por la salida predeterminada del sistema. |
 | `npm run facts:coverage` | Informa la cobertura real de curiosidades por facción. |
 | `npm run facts:coverage -- --require-four-hours` | Devuelve código 1 si alguna facción no llega a 120 curiosidades. |
 | `npm run prepublishOnly` | Ejecuta las pruebas previas a publicar; npm lo invoca automáticamente en `npm publish`. |
 | `npm pack --dry-run` | Revisa los archivos que incluirá el paquete sin publicarlo. |
 
-Para instalar o actualizar el comando global: `npm install -g @ing.jorgeu/wargaming-overlay`. Para una versión concreta: `npm install -g @ing.jorgeu/wargaming-overlay@2.5.0`. Usa `wargaming-overlay --version` para comprobar qué instalación ejecuta tu terminal.
+Para instalar o actualizar el comando global: `npm install -g @ing.jorgeu/wargaming-overlay`. Para una versión concreta: `npm install -g @ing.jorgeu/wargaming-overlay@3.0.0`. Usa `wargaming-overlay --version` para comprobar qué instalación ejecuta tu terminal.
 
-### Activar y desactivar la voz de YouTube (macOS)
+### Activar y desactivar la voz de YouTube
+
+El TTS está **desactivado por defecto**. Sin `YOUTUBE_CHAT_TTS_ENABLED=true`, el overlay no inicia el chat, la cola de voz ni Kokoro. También puedes deshabilitarlo con `"enabled": false` en `youtube-tts.json`.
 
 ```sh
 # Desde el repositorio
@@ -393,7 +396,7 @@ YOUTUBE_CHAT_TTS_ENABLED=true wargaming-overlay start
 YOUTUBE_CHAT_TTS_ENABLED=false wargaming-overlay start
 ```
 
-La variable se aplica a ese inicio. También puedes exportarla en tu terminal; para quitar un valor exportado, usa `unset YOUTUBE_CHAT_TTS_ENABLED`. La configuración opcional `youtube-tts.json`, los pasos OAuth y las limitaciones están en [YouTube Live → voz local](#youtube-live--voz-local-macos). `Ctrl+C` detiene lector, chat y voz; los cambios de código/configuración requieren reiniciar.
+La variable se aplica a ese inicio. También puedes exportarla en tu terminal; para quitar un valor exportado, usa `unset YOUTUBE_CHAT_TTS_ENABLED`. La configuración opcional `youtube-tts.json`, los pasos OAuth y las limitaciones están en [YouTube Live → voz local](#youtube-live--voz-local-con-kokoro). `Ctrl+C` detiene lector, chat y voz; los cambios de código/configuración requieren reiniciar.
 
 Para publicar una release, consulta [PUBLISHING.md](PUBLISHING.md): `npm version VERSION --no-git-tag-version`, `npm login`, `npm whoami`, `npm publish --dry-run` y `npm publish --access public`. La publicación requiere acceso a la cuenta propietaria y una versión no publicada.
 
@@ -567,7 +570,7 @@ npm pack
 
 `npm pack` genera el `.tgz` instalable. `npm pack --dry-run` lista el contenido sin crear ese archivo. No hay un paso de compilación ni dependencias npm que descargar para ejecutar las pruebas; estas sí necesitan Python.
 
-La matriz de `.github/workflows/test.yml` está preparada para Node 20/22/24 en Windows, macOS y Linux. Las pruebas cubren diagnósticos, rutas, selección de instaladores, parser y estado guardado. No sustituyen las pruebas físicas de USB ni de emisión con OBS.
+La matriz de `.github/workflows/test.yml` está preparada para Node 22/24 en Windows, macOS y Linux. Las pruebas cubren diagnósticos, rutas, selección de instaladores, parser y estado guardado. No sustituyen las pruebas físicas de USB ni de emisión con OBS.
 
 Consulta [PUBLISHING.md](PUBLISHING.md) para autenticarte y publicar. `npm publish` sube el paquete realmente; no es un paso necesario para usarlo localmente. El scope debe ser tuyo o de una organización en la que tengas permiso. No se han incluido credenciales en el proyecto.
 
@@ -671,9 +674,9 @@ Activa la depuración inalámbrica y empareja el computador con el teléfono en 
 
 Para elegir otro teléfono, inicia con `--serial SERIAL` usando su identificador de `adb devices -l`. Si hay varios teléfonos diferentes y ninguno seleccionado, el lector pide seleccionar uno. El panel distingue conexión USB, Wi-Fi y espera de una ronda legible. Al enviar Tabletop Battles al fondo se conserva el último marcador; al volver a la ronda, la lectura se reanuda. Durante una reconexión puede haber una pausa de unos segundos.
 
-## YouTube Live → voz local (macOS)
+## YouTube Live → voz local con Kokoro
 
-Función opcional del mismo backend, independiente de OBS y del teléfono. Usa OAuth de solo lectura, descubre el directo activo de la cuenta autorizada y recibe el chat por `liveChatMessages.streamList` (gRPC). La voz sale por el dispositivo predeterminado de macOS; volumen y salida se cambian en macOS. No usa TTS externo ni IA.
+Función opcional del mismo backend, independiente de OBS y del teléfono. Usa OAuth de solo lectura, descubre el directo activo de la cuenta autorizada y recibe el chat por `liveChatMessages.streamList` (gRPC). La voz neural Kokoro se genera localmente desde Node mediante ONNX. Sale por el dispositivo predeterminado del sistema; volumen y salida se cambian en los ajustes de audio. No necesita Python, Homebrew ni servicios TTS externos.
 
 ### Primera autorización
 
@@ -698,11 +701,11 @@ YOUTUBE_CHAT_TTS_ENABLED=true npm start
 npm run test-tts
 ```
 
-La segunda instrucción ejecuta tres mensajes falsos, sin YouTube ni OBS. No la ejecutes a la vez que otro lector TTS: la exclusión de voces es por proceso. Para desactivar el chat, omite la variable o usa `YOUTUBE_CHAT_TTS_ENABLED=false`. No se inicia ninguna conexión YouTube cuando está desactivado. En Windows/Linux el overlay continúa pero esta voz no se inicia.
+La segunda instrucción ejecuta tres mensajes falsos, sin YouTube ni OBS. No la ejecutes a la vez que otro lector TTS: la exclusión de voces es por proceso. Para desactivar el chat, omite la variable o usa `YOUTUBE_CHAT_TTS_ENABLED=false`. No se inicia ninguna conexión YouTube cuando está desactivado. El TTS también se inicia en Windows x64 y Linux x64/ARM64 con audio de escritorio.
 
 Si no hay directo con chat, comprueba cada 60 segundos. Al conectar omite el historial anterior a la conexión. Mantiene en memoria el identificador del chat, el cursor de continuación y hasta 1.000 IDs recientes. Ante una desconexión reintenta a 1, 2, 5, 10 y como máximo 30 segundos; una única conexión por instancia. Al terminar el directo o deshabilitarse el chat cancela la voz pendiente y vuelve a buscar. Si hay varios directos simultáneos, elige el primero por ID y lo indica en el log.
 
-Los mensajes normales se transforman en eventos `youtube_chat_message`; los eventos administrativos, Super Chat y membresías no se leen en V1. No se escriben mensajes en disco. La terminal muestra mensajes sanitizados y estados YouTube/TTS, sin tokens. Los fallos de OAuth, chat o voz no detienen el overlay.
+Los mensajes normales se transforman en eventos `youtube_chat_message`; los eventos administrativos, Super Chat y membresías no se leen en V1. No se escriben mensajes de texto en disco. En Windows, el audio se guarda temporalmente como WAV y se elimina al finalizar o cancelar la lectura. La terminal muestra mensajes sanitizados y estados YouTube/TTS, sin tokens. Los fallos de OAuth, chat o voz no detienen el overlay.
 
 ### Ajustes sencillos
 
@@ -719,7 +722,7 @@ Opcionalmente crea `youtube-tts.json` dentro de la carpeta de datos que muestra 
 }
 ```
 
-Reinicia el backend para aplicar cambios. Los mensajes se truncan sin cortar palabras cuando es posible, los nombres se limitan a 40 caracteres y las URLs se sustituyen por «Enlace». Si la cola está llena, elimina el pendiente más antiguo; nunca interrumpe una voz para superponer otra. Al detener el backend cancela la voz activa y descarta los pendientes. Cada mensaje usa un proceso nuevo de `/usr/bin/say`, sin shell, sin seleccionar dispositivo, y con un tiempo máximo de 120 segundos.
+Reinicia el backend para aplicar cambios. Los mensajes se truncan sin cortar palabras cuando es posible, los nombres se limitan a 40 caracteres y las URLs se sustituyen por «Enlace». Si la cola está llena, elimina el pendiente más antiguo; nunca interrumpe una voz para superponer otra. Al detener el backend cancela la voz activa y descarta los pendientes. Cada mensaje usa un proceso Node aislado para síntesis y reproducción, sin shell y con un tiempo máximo de 120 segundos. La cancelación termina ese proceso y su audio. En macOS, si Kokoro falla, se usa `say` por defecto; en Windows/Linux se registra el error y continúa la cola.
 
 La moderación es un filtro local pequeño de patrones ES/EN para insultos discriminatorios graves, amenazas directas, llamados a violencia y algunas expresiones sexuales explícitas. Sustituye los fragmentos por «censurado» y descarta mensajes sin contenido restante. Conserva groserías coloquiales como «qué mierda de tirada» o «ese weón tuvo demasiada suerte». **No entiende contexto ni garantiza detectar todas las variantes o idiomas**; amplía `extraBlockedTerms` según el canal. También filtra los nombres y elimina instrucciones de voz embebidas antes de ejecutar `say`.
 
@@ -783,4 +786,90 @@ Los enlaces del administrador para OBS son fijos por color: `/army-list.html?sid
 
 Las listas se guardan automáticamente al dejar de escribir brevemente, reordenar o cambiar estados. El panel muestra el estado del guardado y reintenta si falla la conexión. Completa los nombres de las unidades nuevas para guardar. No cierres el panel mientras indique cambios pendientes o errores.
 
-Si `streamList` rechaza las credenciales con código 16, el chat cambia automáticamente a consultas HTTP de respaldo. Respeta el intervalo de YouTube con un mínimo de 15 segundos; puede haber esa demora adicional en la lectura. Este modo consume cuota por consulta (5 unidades, hasta unas 1.200 por hora a intervalos de 15 segundos).
+Si se habilita `httpFallback` y `streamList` rechaza las credenciales con código 16, el chat cambia automáticamente a consultas HTTP de respaldo. Respeta el intervalo de YouTube con un mínimo de 15 segundos; puede haber esa demora adicional en la lectura. Este modo consume cuota por consulta (5 unidades, hasta unas 1.200 por hora a intervalos de 15 segundos).
+
+### Autenticación de streamList y respaldo opcional
+
+Si gRPC rechaza OAuth aunque la API HTTP funcione, se puede probar la autenticación oficial mediante API key. En Google Cloud crea una clave restringida a YouTube Data API v3 y guárdala en un archivo local fuera del repositorio. En `youtube-tts.json` configura `"apiKeyFile": "/ruta/privada/youtube-api-key.txt"`. Reinicia el servicio. OAuth sigue usándose para detectar el directo; streamList envía solo la API key. La clave no se imprime ni se exporta al overlay.
+
+El respaldo por consultas HTTP está **desactivado por defecto** para conservar cuota. Para habilitarlo explícitamente configura `"httpFallback": true`. Cada consulta consume cuota; no equivale a una conexión streamList persistente.
+
+
+### Instalación y configuración de Kokoro
+
+Requiere Node 22+. `npm install` instala las dependencias TTS, pero no descarga el modelo. Kokoro descarga automáticamente su modelo v1.0 q8 y tres voces españolas (aproximadamente 96 MB) al leer el primer mensaje o ejecutar una prueba de voz con ese proveedor. Si el TTS está desactivado o eliges `say`, no descarga ni carga el modelo. La caché se guarda en `~/.cache/wargaming-overlay/kokoro/<revisión>`. Después de la primera descarga, la síntesis funciona sin internet. No hay pasos de instalación manual obligatorios para TTS. Opcionalmente puedes preparar la caché antes de transmitir con `npm run setup-tts`. Si una descarga falla, las siguientes lecturas reintentan y se aplica el respaldo configurado. La conexión a YouTube sí requiere internet.
+
+Sistemas de audio compatibles: macOS Intel/Apple Silicon (CoreAudio), Windows x64 (PowerShell/SoundPlayer y ONNX WebAssembly), Linux x64/ARM64 con glibc y ALSA (`libasound.so.2`) y una salida de audio de escritorio. Windows ARM64, Alpine/musl y sistemas sin audio no se consideran compatibles con reproducción. No se requieren Python, Rust, CMake, ffmpeg ni espeak instalados en el sistema. Linux necesita sus bibliotecas de audio habituales; el paquete no instala componentes del sistema operativo.
+
+Añade estas propiedades a `youtube-tts.json`, conservando las demás:
+
+```json
+{
+  "ttsProvider": "kokoro",
+  "ttsFallback": "say",
+  "kokoroVoice": "ef_dora",
+  "kokoroSpeed": 1
+}
+```
+
+En Windows/Linux usa `"ttsFallback": "none"`. Voces: `ef_dora`, `em_alex`, `em_santa`. Velocidad: de 0.5 a 2. Para volver a la voz anterior en macOS cambia `"ttsProvider": "say"`. Reinicia el backend para aplicar los cambios. También puedes usar `TTS_PROVIDER`, `TTS_FALLBACK`, `KOKORO_VOICE`, `KOKORO_SPEED` y `KOKORO_CACHE_DIR`; las variables tienen prioridad sobre el JSON. `KOKORO_SKIP_DOWNLOAD=true` omite la descarga del comando opcional `npm run setup-tts`, pero no durante la primera lectura con Kokoro.
+
+El modelo se fija a Kokoro v1.0 q8 y a una revisión verificada, para evitar cambios silenciosos. Cambiar el modelo requiere actualizar el manifiesto `tts/kokoro-assets.js` (revisión, archivos y SHA-256) y verificar que conserva las entradas/salida ONNX usadas por `tts/kokoro-engine.js`; no se aceptan IDs de modelos arbitrarios.
+
+La cola FIFO, los filtros y el overlay conservan su funcionamiento. En Windows se usa ONNX WebAssembly para evitar instalar el runtime de Visual C++; la reproducción usa PowerShell incluido en Windows y termina con `PlaySync`. La cancelación termina el árbol de procesos. En macOS/Linux se usa ONNX nativo y CoreAudio/ALSA. La síntesis se realiza en un proceso aparte para no bloquear HTTP/SSE. Las pruebas de generación real se realizaron en macOS; la reproducción física en macOS y la ejecución real en Windows/Linux siguen pendientes. Las pruebas automáticas usan audio simulado y no reproducen sonido.
+
+En la prueba local, la generación nativa tardó aproximadamente 2 s en caliente y 3.7 s en frío para una frase de 3.9 s. El backend WebAssembly que usa Windows tardó aproximadamente 6.5 s en la misma Mac; no es una medición de rendimiento en Windows.
+
+
+### Probar un texto sin iniciar el servicio
+
+```sh
+wargaming-overlay --test-tts "Pedro dice: Magnus falló una carga de ocho pulgadas."
+```
+
+También está disponible el alias `warhammer-overlay --test-tts "Hola mundo"`. Ambos nombres ejecutan el mismo CLI.
+
+Desde el repositorio:
+
+```sh
+npm run start -- --test-tts "Hola, esta es una prueba de voz."
+npm run start -- --test-tts "Hola, soy Alex." --voice em_alex --fallback none
+npm run start -- --test-tts "Esta es la voz anterior de macOS." --provider say
+```
+
+El comando lee el texto por la salida de audio predeterminada, espera a que termine la reproducción y sale. No inicia el servidor, el lector del teléfono ni conexiones a YouTube/OBS; tampoco modifica la partida o la configuración guardada. El texto de prueba se envía directamente al TTS, sin añadir nombre de usuario ni aplicar los filtros del chat. Si falta el modelo de Kokoro, lo descarga automáticamente la primera vez.
+
+Por defecto utiliza las opciones de voz de `youtube-tts.json` en la carpeta de datos habitual y las variables de entorno TTS. Puedes elegir otra configuración con `--data-dir RUTA`. Las opciones del comando tienen prioridad sobre las variables y el archivo, y solo se aplican a esa ejecución:
+
+| Opción | Valores |
+| --- | --- |
+| `--test-tts` | Texto entre comillas; obligatorio y no vacío. |
+| `--voice` | `ef_dora`, `em_alex`, `em_santa`. |
+| `--provider` | `kokoro` o `say` (solo macOS). |
+| `--fallback` | `say` (solo macOS) o `none`. Usa `none` para probar exclusivamente Kokoro. |
+| `--speed` | Número de 0.5 a 2; afecta a Kokoro. |
+| `--data-dir` | Carpeta que contiene `youtube-tts.json`. |
+
+`Ctrl+C` cancela síntesis y reproducción. El comando termina con código 0 cuando finaliza sin error, o 1 si falla la configuración o la lectura. Evita ejecutarlo a la vez que otra instancia TTS para no superponer voces.
+
+
+### Elegir `say` en macOS
+
+Puedes usar la voz nativa como proveedor principal, sin cargar Kokoro. Para una ejecución del servicio:
+
+```sh
+YOUTUBE_CHAT_TTS_ENABLED=true TTS_PROVIDER=say npm run start
+```
+
+Para conservar la elección, configura `"ttsProvider": "say"` en `youtube-tts.json`. Para una lectura puntual:
+
+```sh
+npm run start -- --test-tts "Hola mundo" --provider say
+```
+
+Para volver a Kokoro, configura `"ttsProvider": "kokoro"` y elimina cualquier `TTS_PROVIDER=say` exportado. `"ttsFallback": "say"` conserva la voz nativa como respaldo de Kokoro en macOS; `"ttsFallback": "none"` lo deshabilita. `say` no está disponible en Windows/Linux.
+
+
+### Cambios de la versión 3.0.0
+
+Requiere Node 22 o posterior. Incorpora Kokoro local opcional, selección directa de `say` en macOS, prueba puntual con `--test-tts "texto"` y alias `warhammer-overlay`. El modelo se descarga automáticamente solo al usar Kokoro. Incluye las correcciones de lectura de objetivos primarios y continuidad/autenticación del chat que estaban preparadas en el proyecto.

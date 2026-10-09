@@ -1,7 +1,6 @@
 const {SpeechQueue}=require('../tts/queue');
 const {sanitize}=require('../tts/sanitizer');
 async function main(){
- if(process.platform!=='darwin')throw Error('Esta prueba de voz requiere macOS.');
  const q=new SpeechQueue();
  for(const [author,text] of [['Pedro','Hola, esto es una prueba.'],['John','Este mensaje debe sonar después del anterior.'],['Pedro','Mira esto https://example.com/prueba']])q.enqueue(sanitize({author,text}));
  const stop=()=>{q.stop();};process.once('SIGINT',stop);process.once('SIGTERM',stop);

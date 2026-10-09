@@ -66,7 +66,7 @@ test('FIFO is single-voice, overflow drops oldest pending, failures release queu
 });
 test('say receives stdin without shell or audio-device selection and waits for close',async()=>{
  let input='',args,opts,proc;
- const speaking=speak('--output-file=/tmp/no [[slnc 9999]] hola',{platform:'darwin',spawnImpl:(cmd,a,o)=>{
+ const speaking=speak('--output-file=/tmp/no [[slnc 9999]] hola',{env:{TTS_PROVIDER:'say'},platform:'darwin',spawnImpl:(cmd,a,o)=>{
   assert.equal(cmd,'/usr/bin/say');args=a;opts=o;proc=new EventEmitter();proc.stdin=new PassThrough();proc.stderr=new PassThrough();proc.stdin.on('data',b=>input+=b);proc.kill=()=>{proc.emit('close',null);};return proc;
  }});
  assert.deepEqual(args,[]);assert.equal(opts.shell,false);assert.ok(!input.includes('[['));proc.emit('close',0);await speaking;
@@ -97,7 +97,7 @@ test('backoff caps at 30 seconds and abort ends waiting without crashing overlay
 test('disabled or unsupported TTS never starts a network service',()=>{
  const {startYouTube}=require('../youtube');
  assert.equal(startYouTube('/tmp',{env:{},log:()=>{}}),null);
- assert.equal(startYouTube('/tmp',{env:{YOUTUBE_CHAT_TTS_ENABLED:'true'},platform:'linux',log:()=>{}}),null);
+ assert.equal(startYouTube('/tmp',{env:{YOUTUBE_CHAT_TTS_ENABLED:'true'},platform:'freebsd',log:()=>{}}),null);
 });
 test('real gRPC transport decodes batches, sends OAuth metadata and cancels cleanly',async t=>{
  const grpc=require('@grpc/grpc-js'),loader=require('@grpc/proto-loader');
@@ -113,6 +113,8 @@ test('real gRPC transport decodes batches, sends OAuth metadata and cancels clea
   assert.equal(batch.nextPageToken,'next');assert.equal(normalize(batch.items[0]).text,'Hola');break;
  }
  assert.equal(request.pageToken,'cursor');assert.equal(request.liveChatId,'chat');assert.deepEqual(metadata.get('authorization'),['Bearer test-access']);
+ for await(const batch of streamChat({apiKey:'test-key',auth:{token:async()=>{throw Error('OAuth must not be sent with API key');}},liveChatId:'chat',createClient:C=>new C('127.0.0.1:'+port,grpc.credentials.createInsecure())})){break;}
+ assert.deepEqual(metadata.get('x-goog-api-key'),['test-key']);assert.deepEqual(metadata.get('authorization'),[]);
 });
 test('20 messages leave at most ten pending and discard oldest first',async()=>{
  let release;const starts=[];

@@ -3,7 +3,7 @@ function normalize(item){
  if(item.snippet?.type!==1 || !item.id || typeof item.snippet.textMessageDetails?.messageText!=='string')return null;
  return {id:item.id,type:'youtube_chat_message',author:item.authorDetails?.displayName||'Usuario',text:item.snippet.textMessageDetails.messageText,timestamp:item.snippet.publishedAt,messageType:'textMessageEvent'};
 }
-async function* streamChat({auth,liveChatId,pageToken,signal,createClient}){
+async function* streamChat({auth,liveChatId,pageToken,signal,createClient,apiKey}){
  const grpc=require('@grpc/grpc-js'),loader=require('@grpc/proto-loader');
  const def=loader.loadSync(path.join(__dirname,'chat.proto'));
  const Service=grpc.loadPackageDefinition(def).youtube.api.v3.V3DataLiveChatMessageService;
@@ -11,8 +11,10 @@ async function* streamChat({auth,liveChatId,pageToken,signal,createClient}){
  let call;
  const cancel=()=>call?.cancel();
  try{
-  const token=await auth.token(signal);if(signal?.aborted)return;
-  const meta=new grpc.Metadata();meta.set('authorization',`Bearer ${token}`);
+  const meta=new grpc.Metadata();
+  if(apiKey)meta.set('x-goog-api-key',apiKey);
+  else meta.set('authorization',`Bearer ${await auth.token(signal)}`);
+  if(signal?.aborted)return;
   // Reopen periodically with fresh credentials, retaining the continuation token.
   call=client.streamList({liveChatId,pageToken,part:['id','snippet','authorDetails']},meta,{deadline:Date.now()+45*60*1000});
   signal?.addEventListener('abort',cancel,{once:true});
