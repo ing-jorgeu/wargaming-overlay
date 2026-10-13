@@ -78,3 +78,8 @@ test('importer groups explicitly assigned leaders after interpreting and keeps f
  const importer=createImporter({apiKey:'test',fetchImpl:async(_,opts)=>{payload=JSON.parse(opts.body);return {ok:true,json:async()=>({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(raw)}]}]})};}});
  const result=await importer('army');assert.equal(result.units.length,1);assert.deepEqual(result.units[0].characters,['Herald']);assert.equal(result.armyFaction,'Chaos Daemons');assert.ok(payload.text.format.schema.properties.armyFaction.enum.includes('Thousand Sons'));assert.match(payload.instructions,/un elemento por línea/);
 });
+
+test('multiple leaders and support characters join the same unit without losing enhancements',()=>{
+ const {cleanList,groupLeaders}=require('../remote-lists/importer');const list=cleanList({name:'Army',units:[{name:'Captain',characters:[],enhancement:'Relic',notes:''},{name:'Apothecary',characters:[],notes:'Support'},{name:'Squad',characters:[],notes:'2× plasma'}]});
+ const grouped=groupLeaders(list.units,[2,2,-1]);assert.equal(grouped.units.length,1);assert.deepEqual(grouped.units[0].characters,['Captain','Apothecary']);assert.equal(grouped.units[0].name,'Squad');assert.equal(grouped.units[0].enhancement,'Captain: Relic');assert.match(grouped.units[0].notes,/Apothecary: Support/);
+});

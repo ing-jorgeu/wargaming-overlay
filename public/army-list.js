@@ -66,8 +66,8 @@
     editable(row,p.rosterId,[u]);
     if(!hasLeaders&&group.units.length===1)row.append(heading);
     if(hasLeaders){
-     row.append(el('h2',u.name,'group-name member-title'));
-     if(u.characters.length)row.append(el('p','+ '+u.characters.join(' · '),'unit-detail led-unit'));
+     row.append(el('h2',u.characters.length?u.characters.join(' + '):u.name,'group-name member-title'));
+     if(u.characters.length)row.append(el('p','Unidad: '+u.name,'unit-detail led-unit'));
     }
     const label=el('div',null,'member-status');if(group.units.length>1)label.append(el('span',`Unidad ${i+1}`,'member-number'));
     if(u.destroyed)label.append(el('span','Destruida','unit-badge'));else if(u.deepStrike)label.append(el('span','En reservas','unit-badge'));

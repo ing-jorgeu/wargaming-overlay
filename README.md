@@ -1018,6 +1018,8 @@ Las pruebas verifican caducidad exacta a los siete días, rechazo de referencias
 
 El prompt recibe el catálogo de facciones del manager. El jugador puede corregir facción y destacamentos en la vista previa; al sincronizar se asignan automáticamente al jugador correspondiente. Si no se pudo identificar un dato, no se inventa. Para listas confirmadas antes de esta función, vuelve a interpretar y confirmar para incorporar esos campos.
 
-Los personajes con una asignación explícita se incorporan a `characters` de la unidad liderada y se muestran juntos en una tarjeta, conservando mejoras y notas. Si la exportación no declara la asignación, el jugador puede elegir **Unir como líder de** antes de confirmar. No se deduce la asociación por proximidad en el texto.
+Los personajes con una asignación explícita se incorporan a `characters` de la unidad liderada y se muestran juntos en una tarjeta, conservando mejoras y notas. El título muestra todos los líderes y apoyos unidos por «+», y debajo aparece el nombre de la unidad liderada. Si la exportación no declara la asignación, el jugador puede elegir **Unir como líder de** antes de confirmar. No se deduce la asociación por proximidad en el texto.
 
 Las notas generadas usan cantidades y nombres breves, un elemento por línea, con un máximo total de 160 caracteres. El overlay presenta cada línea como un bullet; también admite notas antiguas separadas por punto y coma. Si las notas combinadas de un líder y su unidad exceden el límite, el resultado se recorta y muestra un aviso para revisión.
+
+La página del jugador muestra un indicador de carga durante el análisis, lo retira tanto al terminar como ante un error y mantiene el botón deshabilitado para evitar envíos duplicados.
