@@ -54,3 +54,8 @@ document.querySelector('#obs-url').textContent=location.origin+'/overlay-art.htm
 
 function resolutionHelp(){const [w,h]=document.querySelector('#resolution-preset').value.split('x');document.querySelector('#resolution-help').textContent=`En OBS configura Ancho ${w} y Alto ${h} en la fuente Navegador. El overlay se adapta automáticamente; no cambia la resolución de tu transmisión.`;}
 document.querySelector('#resolution-preset').addEventListener('change',resolutionHelp);resolutionHelp();
+
+window.addEventListener('remote-list-applied',async()=>{
+ try{const next=await fetch('/state').then(r=>{if(!r.ok)throw Error();return r.json();});state=next;for(const side of ['left','right']){const faction=players.querySelector(`[data-side="${side}"][data-key="faction"]`);if(faction)faction.value=next[side].faction;players.querySelectorAll(`[data-side="${side}"][data-detachment]`).forEach(input=>input.value=next[side].detachments?.[Number(input.dataset.detachment)]||'');}}
+ catch{document.querySelector('#saved').textContent='Recarga el panel para ver la facción y destacamentos sincronizados.';}
+});

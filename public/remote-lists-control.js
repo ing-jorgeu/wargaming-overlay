@@ -12,11 +12,10 @@
    const row=el('div'),label=side==='blue'?'azul':'rojo',link=el('a','Enlace del jugador '+label);link.href=state.links[side];link.target='_blank';link.rel='noopener';row.append(link);
    const copy=el('button','Copiar enlace');copy.type='button';copy.onclick=()=>navigator.clipboard.writeText(state.links[side]).catch(()=>{status.textContent='Copia este enlace: '+state.links[side];});row.append(copy);
    const open=state.status?.[side]?.open===true,gate=el('button',(open?'Deshabilitar':'Habilitar')+' subida '+label);gate.type='button';gate.onclick=()=>act(()=>request('/gate',{side,open:!open}));row.append(gate);
-   if(state.pending?.[side]){row.append(el('p',state.pending[side].name+' · '+state.pending[side].count+' unidades pendientes'));const apply=el('button','Cargar en '+label);apply.type='button';apply.onclick=()=>act(async()=>{if(window.remoteRostersBusy?.())throw Error('Espera a que se guarden los cambios manuales antes de cargar una lista.');const next=await request('/apply',{side});window.dispatchEvent(new Event('remote-list-applied'));return next;});row.append(apply);}
    root.append(row);
   }
-  const sync=el('button','Sincronizar listas');sync.type='button';sync.onclick=()=>act(async()=>{if(window.remoteRostersBusy?.())throw Error('Espera a que se guarden los cambios manuales antes de sincronizar.');const next=await request('/sync');const status=await request('/status');return {...next,status:status.status};});root.append(sync);
-  status.textContent=state.status?'Azul: '+(state.status.blue.open?'abierto':'cerrado')+' · Rojo: '+(state.status.red.open?'abierto':'cerrado'):'Pulsa Sincronizar para consultar las listas. La carga en OBS es manual.';
+  const sync=el('button','Sincronizar listas');sync.type='button';sync.onclick=()=>act(async()=>{if(window.remoteRostersBusy?.())throw Error('Espera a que se guarden los cambios manuales antes de sincronizar.');const next=await request('/sync',{});window.dispatchEvent(new Event('remote-list-applied'));const status=await request('/status');return {...next,status:status.status};});root.append(sync);
+  status.textContent=state.synced?(state.synced.length?'Listas actualizadas: '+state.synced.map(s=>s==='blue'?'azul':'rojo').join(' y ')+'.':'Las listas ya están actualizadas.') : state.status?'Azul: '+(state.status.blue.open?'abierto':'cerrado')+' · Rojo: '+(state.status.red.open?'abierto':'cerrado'):'Pulsa Sincronizar para actualizar las listas en el overlay.';
  }
  request().then(async d=>{state=d;if(d.enabled&&d.configured){try{state=await request('/status');}catch{}}render();}).catch(()=>{});
 })();

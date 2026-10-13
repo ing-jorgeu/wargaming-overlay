@@ -29,13 +29,13 @@ test('attempt cap survives failures and rate limit blocks request floods',async 
  assert.equal((await f.request('/api/blue/import',{text:'Other'})).status,429);assert.equal(calls,1);
  for(let i=0;i<60;i++)await f.request('/api/red/status');assert.equal((await f.request('/api/red/status')).status,429);
 });
-test('local feature disabled makes no outbound calls; synchronization stages lists and protects local revisions',async t=>{
- const remote=await fixture(t);await remote.request('/api/manager/blue/gate',{open:true},true);const draft=(await remote.request('/api/blue/import',{text:'Army'})).data;await remote.request('/api/blue/confirm',{id:draft.id,name:'Remote',units:draft.units});
+test('local feature disabled makes no outbound calls; synchronization applies lists directly and preserves states on repeated sync',async t=>{
+ const remote=await fixture(t);await remote.request('/api/manager/blue/gate',{open:true},true);const draft=(await remote.request('/api/blue/import',{text:'Army'})).data;await remote.request('/api/blue/confirm',{id:draft.id,name:'Remote',armyFaction:'Thousand Sons',detachments:['Cult of Magic'],units:draft.units});
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'local-remote-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));let snapshot={players:{left:{rosterId:'a'},right:{rosterId:'b'}},rosters:{a:{revision:2,name:'Local',units:[],backgroundUrl:'https://example.com/bg'}}};let applied=0;
- const client=createLocalRemote({enabled:true,dataDir:dir,env:{REMOTE_LISTS_URL:remote.base,REMOTE_LISTS_MANAGER_TOKEN:token},getSnapshot:()=>snapshot,applyRoster:(id,r)=>{snapshot.rosters[id]=r;applied++;}});
+ const client=createLocalRemote({enabled:true,dataDir:dir,env:{REMOTE_LISTS_URL:remote.base,REMOTE_LISTS_MANAGER_TOKEN:token},getSnapshot:()=>snapshot,applyRoster:(id,r,metadata)=>{snapshot.rosters[id]=r;Object.assign(snapshot.players.left,metadata);applied++;}});
  const local=http.createServer((req,res)=>client.handle(req,res,new URL(req.url,'http://local')));await new Promise(r=>local.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>local.close(r)));const base='http://127.0.0.1:'+local.address().port;
  const call=async(route,body)=>{const r=await fetch(base+'/remote-lists'+route,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
- assert.ok(!JSON.stringify((await call('')).data).includes(token));await call('/sync',{});assert.equal(applied,0);snapshot.rosters.a.revision=3;assert.equal((await call('/apply',{side:'blue'})).status,409);await call('/sync',{});assert.equal((await call('/apply',{side:'blue'})).status,200);assert.equal(applied,1);assert.equal(snapshot.rosters.a.name,'Remote');assert.equal(snapshot.rosters.a.backgroundUrl,'https://example.com/bg');assert.deepEqual((await call('/sync',{})).data.pending,{});
+ assert.ok(!JSON.stringify((await call('')).data).includes(token));await call('/sync',{});assert.equal(applied,1);assert.equal(snapshot.rosters.a.name,'Remote');assert.equal(snapshot.players.left.faction,'Thousand Sons');assert.deepEqual(snapshot.players.left.detachments,['Cult of Magic']);assert.equal(snapshot.rosters.a.backgroundUrl,'https://example.com/bg');snapshot.rosters.a.units[0].destroyed=true;assert.deepEqual((await call('/sync',{})).data.synced,[]);assert.equal(applied,1);assert.equal(snapshot.rosters.a.units[0].destroyed,true);
  const disabled=createLocalRemote({enabled:false,dataDir:dir,env:{},fetchImpl:()=>{throw Error('must not connect');}});let value;await disabled.handle({method:'GET'},{writeHead(){},end(s){value=JSON.parse(s);}},{pathname:'/remote-lists'});assert.deepEqual(value,{enabled:false});
  const evil=await fetch(base+'/remote-lists/gate',{method:'POST',headers:{Origin:'https://evil.example','Content-Type':'application/json'},body:JSON.stringify({side:'red',open:true})});assert.equal(evil.status,403);
 });
@@ -55,4 +55,26 @@ test('remote URL config rejects insecure/public HTTP and embedded credentials',(
 test('each LLM request reserves persistent budget and the second phase is blocked if it would exceed it',async t=>{
  let dispatches=0;const importer=async(text,{reserveTokens})=>{reserveTokens(10);dispatches++;reserveTokens(20);dispatches++;return list;};importer.reservesCalls=true;
  const f=await fixture(t,{tokenBudget:25,importer});await f.request('/api/manager/blue/gate',{open:true},true);assert.equal((await f.request('/api/blue/import',{text:'List'})).status,429);assert.equal(dispatches,1);assert.equal((await f.request('/api/manager/status',null,true)).data.reservedTokens,10);
+});
+
+test('leader grouping keeps declared assignments together and rejects ambiguous chains',()=>{
+ const {cleanList,groupLeaders}=require('../remote-lists/importer');
+ const list=cleanList({name:'Army',armyFaction:'Chaos Daemons',detachments:['Demonic Incursion'],units:[{name:'Herald',characters:[],enhancement:'Gift',notes:'Sword'},{name:'Daemons',characters:[],notes:'Icon'}]});
+ assert.equal(list.armyFaction,'Chaos Daemons');assert.deepEqual(list.detachments,['Demonic Incursion']);
+ const grouped=groupLeaders(list.units,[1,-1]);assert.equal(grouped.units.length,1);assert.deepEqual(grouped.units[0].characters,['Herald']);assert.equal(grouped.units[0].enhancement,'Herald: Gift');assert.match(grouped.units[0].notes,/Icon\nHerald: Sword/);
+ assert.throws(()=>groupLeaders(list.units,[1,0]),/Asignación/);
+});
+
+test('confirmation persists editable faction and merges manually assigned leaders',async t=>{
+ const f=await fixture(t,{importer:async()=>({name:'Army',armyFaction:'Chaos Daemons',detachments:['Incursion'],units:[{name:'Herald',characters:[],notes:'Sword'},{name:'Daemons',characters:[],notes:'Icon'}]})});
+ await f.request('/api/manager/blue/gate',{open:true},true);const draft=(await f.request('/api/blue/import',{text:'army'})).data;draft.units[0].leaderOf=1;
+ assert.equal((await f.request('/api/blue/confirm',{id:draft.id,name:draft.name,armyFaction:'Thousand Sons',detachments:['Cult of Magic'],units:draft.units})).status,200);
+ const saved=(await f.request('/api/manager/status',undefined,true)).data.blue.confirmed;assert.equal(saved.armyFaction,'Thousand Sons');assert.deepEqual(saved.detachments,['Cult of Magic']);assert.equal(saved.units.length,1);assert.deepEqual(saved.units[0].characters,['Herald']);
+});
+
+test('importer groups explicitly assigned leaders after interpreting and keeps faction catalog in prompt',async()=>{
+ const {createImporter}=require('../remote-lists/importer');let payload;
+ const raw={name:'Army',armyFaction:'Chaos Daemons',faction:'chaos-daemons',detachments:['Incursion'],warnings:[],units:[{name:'Herald',characters:[],notes:'Sword',leaderOf:1},{name:'Daemons',characters:[],notes:'Icon',leaderOf:-1}]};
+ const importer=createImporter({apiKey:'test',fetchImpl:async(_,opts)=>{payload=JSON.parse(opts.body);return {ok:true,json:async()=>({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(raw)}]}]})};}});
+ const result=await importer('army');assert.equal(result.units.length,1);assert.deepEqual(result.units[0].characters,['Herald']);assert.equal(result.armyFaction,'Chaos Daemons');assert.ok(payload.text.format.schema.properties.armyFaction.enum.includes('Thousand Sons'));assert.match(payload.instructions,/un elemento por línea/);
 });

@@ -1,6 +1,6 @@
 const {isIP}=require('node:net');
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-const {timingSafeEqual,randomUUID,createHash}=require('node:crypto');const {cleanList,tokenReservation}=require('./importer');
+const {timingSafeEqual,randomUUID,createHash}=require('node:crypto');const {cleanList,groupLeaders,tokenReservation}=require('./importer');
 const sides=['blue','red'];
 function fail(message,status=400){return Object.assign(Error(message),{status});}
 function send(res,status,value){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(value));}
@@ -26,6 +26,7 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
   try{
    const url=new URL(req.url,'http://backend');
+   if(url.pathname==='/factions.json'&&req.method==='GET')return send(res,200,require('../public/factions.json'));
    if(url.pathname==='/health'&&req.method==='GET')return send(res,200,{ok:true});
    if(url.pathname.startsWith('/api/manager/')){
     authorize(req);
@@ -63,7 +64,7 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
    if(side&&action==='confirm'&&req.method==='POST'){
     const input=await readJSON(req,60000),slot=data[side],draft=slot.draft;
     if(!isOpen(side)||!draft||draft.expires<now()||draft.id!==input.id||draft.generation!==slot.generation)throw fail('La vista previa expiró o la subida se cerró.',409);
-    const list=cleanList({name:input.name,units:input.units,warnings:draft.warnings});slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
+    const list=cleanList({name:input.name,armyFaction:input.armyFaction??draft.armyFaction,detachments:input.detachments??draft.detachments,units:input.units,warnings:draft.warnings});const grouped=groupLeaders(list.units,input.units.map(u=>u.leaderOf??-1));list.units=grouped.units;list.warnings.push(...grouped.warnings);slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
    }
    const staticFiles={'/blue':'player.html','/red':'player.html','/player.js':'player.js','/player.css':'player.css'};
    if(req.method==='GET'&&staticFiles[url.pathname]){const f=staticFiles[url.pathname];res.writeHead(200,{'Content-Type':f.endsWith('.js')?'application/javascript':f.endsWith('.css')?'text/css':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'public',f)));}

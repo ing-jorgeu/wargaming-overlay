@@ -88,8 +88,8 @@ async function readToastBody(req,limit=8192) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
-const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./remote-lists/local').createLocalRemote({enabled:true,dataDir,getSnapshot:rosterSnapshot,applyRoster:(id,roster)=>{
- const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;broadcastRosters();
+const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./remote-lists/local').createLocalRemote({enabled:true,dataDir,getSnapshot:rosterSnapshot,applyRoster:(id,roster,metadata)=>{
+ const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;if(metadata){for(const side of ['left','right'])if(state[side].rosterId===id)state[side]={...state[side],...(metadata.faction?{faction:metadata.faction}:{}),...(metadata.detachments.length?{detachments:metadata.detachments}:{})};saveState();broadcast();}else broadcastRosters();
 }}):null;
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control','no-store');

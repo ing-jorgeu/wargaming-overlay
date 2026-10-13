@@ -66,15 +66,15 @@
     editable(row,p.rosterId,[u]);
     if(!hasLeaders&&group.units.length===1)row.append(heading);
     if(hasLeaders){
-     row.append(el('h2',u.characters.length?u.characters.join(' · '):u.name,'group-name member-title'));
-     if(u.characters.length)row.append(el('p','Lidera: '+u.name,'unit-detail led-unit'));
+     row.append(el('h2',u.name,'group-name member-title'));
+     if(u.characters.length)row.append(el('p','+ '+u.characters.join(' · '),'unit-detail led-unit'));
     }
     const label=el('div',null,'member-status');if(group.units.length>1)label.append(el('span',`Unidad ${i+1}`,'member-number'));
     if(u.destroyed)label.append(el('span','Destruida','unit-badge'));else if(u.deepStrike)label.append(el('span','En reservas','unit-badge'));
     if(u.battleshocked&&!u.destroyed)label.append(el('span','Battleshocked','unit-badge battleshocked'));
     if(label.childNodes.length)row.append(label);
     const detail=(name,text)=>{if(!text)return;const line=el('p',null,'unit-detail');line.append(el('strong',name+' '),document.createTextNode(text));row.append(line);};
-    detail('Mejora:',u.enhancement);if(u.notes)row.append(el('p',u.notes,'unit-detail unit-notes'));
+    detail('Mejora:',u.enhancement);if(u.notes){const notes=el('ul',null,'unit-detail unit-notes');for(const item of u.notes.split(/\n|[;•]/).map(s=>s.replace(/^\s*[-•]\s*/, '').trim()).filter(Boolean))notes.append(el('li',item));row.append(notes);}
     block.append(row);
    });root.append(block);
   }

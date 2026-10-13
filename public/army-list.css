@@ -24,3 +24,5 @@ html,body{width:100%;height:100%;background:#10151e}
 .unit-context-menu button{display:block;width:100%;border:0;border-radius:4px;background:transparent;color:inherit;text-align:left;padding:10px 10px 10px 30px;position:relative;font:inherit;cursor:pointer}
 .unit-context-menu button:hover,.unit-context-menu button:focus-visible{background:#30445c;outline:none}
 .unit-context-menu button.checked:before{content:'✓';position:absolute;left:10px}
+
+.unit-notes{padding-left:22px;margin:8px 0;line-height:1.35}.unit-notes li{padding-left:3px;margin:3px 0}.led-unit{opacity:.85}

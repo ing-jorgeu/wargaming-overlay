@@ -934,10 +934,9 @@ En **Listas de ejército → Listas desde los teléfonos**, guarda la dirección
 
 1. Copia el enlace azul o rojo y habilita la subida de ese lado.
 2. El jugador pega el texto exportado de su app, revisa/corrige unidades y confirma. No se asignan personajes a unidades por mera cercanía en el texto.
-3. Pulsa **Sincronizar listas**: descarga las listas confirmadas y las deja pendientes, sin alterar OBS.
-4. Pulsa **Cargar en azul** o **Cargar en rojo** cuando corresponda. Conserva el fondo local, pero reemplaza las unidades y reinicia sus estados para esa nueva lista.
+3. Pulsa **Sincronizar listas**: descarga y aplica inmediatamente las listas confirmadas al lado correspondiente, incluyendo facción y destacamentos. Conserva el fondo local y reinicia los estados solo cuando llega una importación nueva. No hay un segundo botón de carga.
 
-No sincroniza periódicamente ni necesita abrir puertos en tu Mac. Una lista cargada queda guardada localmente y funciona sin internet. Si la lista local o los jugadores cambian entre sincronización y carga, rechaza la carga para no sobrescribirlos: guarda los cambios y vuelve a sincronizar. El panel también impide cargar mientras haya ediciones manuales pendientes. Cargar la misma importación de nuevo no reemplaza estados modificados durante la partida.
+No sincroniza periódicamente ni necesita abrir puertos en tu Mac. Una lista cargada queda guardada localmente y funciona sin internet. Si la lista local o los jugadores cambian durante la descarga, rechaza la sincronización para no sobrescribirlos: guarda los cambios y vuelve a sincronizar. El panel también impide cargar mientras haya ediciones manuales pendientes. Cargar la misma importación de nuevo no reemplaza estados modificados durante la partida.
 
 **Sin `--remote-lists` no aparecen estos controles, no se cargan credenciales remotas y no se conecta al backend.** El overlay continúa como antes. La prueba `--test-tts` y el backend remoto son funciones independientes.
 
@@ -986,7 +985,7 @@ npm run start -- --remote-lists
 2. Guarda la conexión `http://127.0.0.1:8080` y el valor `REMOTE_LISTS_MANAGER_TOKEN` de `.env.dev`. Si está vacío, el script demo usa `demo-manager-token-local-only`. Solo es una credencial de prueba: para producción configura una propia de al menos 24 caracteres.
 3. Pulsa **Habilitar subida azul**. Abre `http://127.0.0.1:8080/blue` en otra pestaña; para rojo usa `/red` y habilita ese lado.
 4. Pega `remote-lists/examples/demo-list.txt`. Pulsa **Interpretar lista**, cambia un comentario y confirma.
-5. Vuelve al panel: pulsa **Sincronizar listas** y **Cargar en azul**. Abre la lista para OBS y comprueba nombres y comentarios.
+5. Vuelve al panel: pulsa **Sincronizar listas**. Abre la lista para OBS y comprueba nombres y comentarios.
 
 El modo demo está identificado en la página y devuelve una respuesta predefinida. Prueba revisión, edición, guardado, cierre y sincronización; **no demuestra la calidad de la interpretación ni consulta fichas reales**. `npm run dev:remote-lists` fuerza el modo demo aunque `.env.dev` diga `REMOTE_LISTS_DEMO=false`.
 
@@ -1014,3 +1013,11 @@ node --test test/wargear-references.test.js test/remote-lists.test.js
 ```
 
 Las pruebas verifican caducidad exacta a los siete días, rechazo de referencias/redirects de 10.ª, conservación del equipo sin referencia, comparación con índices de unidades y cobro de ambas fases antes de enviar peticiones. También comprueban presupuestos, autenticación del manager, subidas cerradas, persistencia, confirmación y protección de listas locales.
+
+### Facción, destacamentos, líderes y notas
+
+El prompt recibe el catálogo de facciones del manager. El jugador puede corregir facción y destacamentos en la vista previa; al sincronizar se asignan automáticamente al jugador correspondiente. Si no se pudo identificar un dato, no se inventa. Para listas confirmadas antes de esta función, vuelve a interpretar y confirmar para incorporar esos campos.
+
+Los personajes con una asignación explícita se incorporan a `characters` de la unidad liderada y se muestran juntos en una tarjeta, conservando mejoras y notas. Si la exportación no declara la asignación, el jugador puede elegir **Unir como líder de** antes de confirmar. No se deduce la asociación por proximidad en el texto.
+
+Las notas generadas usan cantidades y nombres breves, un elemento por línea, con un máximo total de 160 caracteres. El overlay presenta cada línea como un bullet; también admite notas antiguas separadas por punto y coma. Si las notas combinadas de un líder y su unidad exceden el límite, el resultado se recorta y muestra un aviso para revisión.

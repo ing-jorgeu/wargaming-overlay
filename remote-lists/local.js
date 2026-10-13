@@ -1,4 +1,4 @@
-const fs=require('node:fs'),path=require('node:path');const {validateUnits,validateName}=require('../rosters');const {readJSON}=require('./backend');
+const fs=require('node:fs'),path=require('node:path');const {validateUnits,validateName}=require('../rosters');const {cleanList}=require('./importer');const {readJSON}=require('./backend');
 function backendURL(value){let u;try{u=new URL(value);}catch{throw Error('Dirección del backend inválida.');}if(u.username||u.password||u.search||u.hash||u.pathname!=='/'||!(u.protocol==='https:'||(u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname))))throw Error('Usa HTTPS, o HTTP localhost para pruebas, sin rutas ni credenciales en la URL.');return u.origin;}
 function createLocalRemote({enabled,dataDir,env=process.env,getSnapshot,applyRoster,fetchImpl=fetch}){
  const configFile=path.join(dataDir,'remote-lists-config.json'),pendingFile=path.join(dataDir,'remote-lists-pending.json');let config={},pending={},locked=false;
@@ -28,14 +28,17 @@ function createLocalRemote({enabled,dataDir,env=process.env,getSnapshot,applyRos
      if(!['blue','red'].includes(input.side)||typeof input.open!=='boolean')throw Error('Estado de subida inválido.');const status=await remote(input.side+'/gate',{open:input.open});return reply(200,{...view(),status:{blue:{...status.blue,confirmed:undefined},red:{...status.red,confirmed:undefined}}});
     }
     if(url.pathname==='/remote-lists/sync'){
-     const status=await remote('status'),snapshot=getSnapshot(),next={};
+     const before=getSnapshot(),revisions=JSON.stringify(before),status=await remote('status');
+     if(JSON.stringify(getSnapshot())!==revisions)return reply(409,{error:'La lista local cambió durante la sincronización. Vuelve a sincronizar.'});
+     const changes=[];
      for(const [side,localSide] of [['blue','left'],['red','right']]){
-      const list=status[side]?.confirmed;if(!list)continue;const player=snapshot.players[localSide],roster=snapshot.rosters[player.rosterId];
-      if(roster?.remoteImportId===list.id)continue;
+      const list=status[side]?.confirmed;if(!list)continue;const player=before.players[localSide],old=before.rosters[player.rosterId];
+      if(old?.remoteImportId===list.id)continue;
       if(typeof list.id!=='string'||list.id.length>80)throw Error('Lista remota inválida.');
-      next[side]={rosterId:player.rosterId,revision:roster?.revision||0,list:{id:list.id,name:validateName(list.name),units:validateUnits(list.units)}};
+      const clean=cleanList(list);changes.push({side,id:player.rosterId,roster:{revision:(old?.revision||0)+1,name:clean.name,units:clean.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:list.id},metadata:{faction:clean.armyFaction,detachments:clean.detachments}});
      }
-     pending=next;write(pendingFile,pending);return reply(200,view());
+     for(const change of changes)applyRoster(change.id,change.roster,change.metadata);
+     pending={};write(pendingFile,pending);return reply(200,{...view(),synced:changes.map(c=>c.side)});
     }
     if(url.pathname==='/remote-lists/apply'){
      const p=pending[input.side];if(!['blue','red'].includes(input.side)||!p)throw Error('No hay lista pendiente para ese lado.');
