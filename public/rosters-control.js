@@ -73,5 +73,7 @@
  }
  window.addEventListener('online',()=>{for(const [id,d] of drafts)if(d.dirty)schedule(id,0);});
  window.addEventListener('layout-saved',load);
+ window.addEventListener('remote-list-applied',load);
+ window.remoteRostersBusy=()=>[...drafts.values()].some(d=>d.dirty||d.saving);
  window.addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
 })();

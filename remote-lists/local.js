@@ -1,0 +1,52 @@
+const fs=require('node:fs'),path=require('node:path');const {validateUnits,validateName}=require('../rosters');const {readJSON}=require('./backend');
+function backendURL(value){let u;try{u=new URL(value);}catch{throw Error('Dirección del backend inválida.');}if(u.username||u.password||u.search||u.hash||u.pathname!=='/'||!(u.protocol==='https:'||(u.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(u.hostname))))throw Error('Usa HTTPS, o HTTP localhost para pruebas, sin rutas ni credenciales en la URL.');return u.origin;}
+function createLocalRemote({enabled,dataDir,env=process.env,getSnapshot,applyRoster,fetchImpl=fetch}){
+ const configFile=path.join(dataDir,'remote-lists-config.json'),pendingFile=path.join(dataDir,'remote-lists-pending.json');let config={},pending={},locked=false;
+ if(enabled){try{config=JSON.parse(fs.readFileSync(configFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}try{pending=JSON.parse(fs.readFileSync(pendingFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}if(env.REMOTE_LISTS_URL)config.url=backendURL(env.REMOTE_LISTS_URL);if(env.REMOTE_LISTS_MANAGER_TOKEN)config.token=env.REMOTE_LISTS_MANAGER_TOKEN;}
+ const configured=()=>!!config.url&&typeof config.token==='string'&&config.token.length>=24;
+ function write(file,value){fs.writeFileSync(file+'.tmp',JSON.stringify(value),{mode:0o600});fs.renameSync(file+'.tmp',file);fs.chmodSync(file,0o600);}
+ const view=()=>({enabled,configured:configured(),url:config.url||'',links:configured()?{blue:config.url+'/blue',red:config.url+'/red'}:{},pending:Object.fromEntries(Object.entries(pending).map(([s,p])=>[s,{name:p.list.name,count:p.list.units.length}]))});
+ async function remote(route,body){if(!configured())throw Error('Configura la dirección y credencial del backend.');const r=await fetchImpl(config.url+'/api/manager/'+route,{method:body?'POST':'GET',redirect:'error',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+config.token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let chunks=[],size=0;for await(const chunk of r.body){size+=chunk.length;if(size>500000)throw Error('Respuesta remota demasiado grande.');chunks.push(chunk);}const value=JSON.parse(Buffer.concat(chunks));if(!r.ok)throw Error(value.error||'Error del backend remoto.');return value;}
+ async function handle(req,res,url){
+  const reply=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(value));};
+  if(!enabled){reply(url.pathname==='/remote-lists'&&req.method==='GET'?200:404,{enabled:false});return;}
+  // JSON-only same-origin writes prevent a foreign site from controlling the local proxy.
+  if(req.headers.origin&&req.headers.origin!=='http://'+req.headers.host){reply(403,{error:'Origen no permitido.'});return;}
+  if(!['127.0.0.1','localhost','[::1]'].includes((req.headers.host||'').split(':')[0])&&!(req.headers.host||'').startsWith('[::1]:')){reply(403,{error:'Host no permitido.'});return;}
+  try{
+   if(req.method==='GET'&&url.pathname==='/remote-lists')return reply(200,view());
+   if(req.method==='GET'&&url.pathname==='/remote-lists/status'){const status=await remote('status');return reply(200,{...view(),status:{blue:status.blue&&{...status.blue,confirmed:undefined},red:status.red&&{...status.red,confirmed:undefined},reservedTokens:status.reservedTokens,tokenBudget:status.tokenBudget}});}
+   if(req.method!=='POST')return reply(404,{error:'Ruta no encontrada.'});
+   if(locked)return reply(409,{error:'Espera a que termine la operación anterior.'});locked=true;
+   try{
+    const input=await readJSON(req,4096);
+    if(url.pathname==='/remote-lists/config'){
+     const token=input.token||config.token;if(typeof token!=='string'||token.length<24||token.length>1024)throw Error('La credencial debe tener de 24 a 1024 caracteres.');
+     config={url:backendURL(input.url),token};write(configFile,config);pending={};write(pendingFile,pending);return reply(200,view());
+    }
+    if(url.pathname==='/remote-lists/gate'){
+     if(!['blue','red'].includes(input.side)||typeof input.open!=='boolean')throw Error('Estado de subida inválido.');const status=await remote(input.side+'/gate',{open:input.open});return reply(200,{...view(),status:{blue:{...status.blue,confirmed:undefined},red:{...status.red,confirmed:undefined}}});
+    }
+    if(url.pathname==='/remote-lists/sync'){
+     const status=await remote('status'),snapshot=getSnapshot(),next={};
+     for(const [side,localSide] of [['blue','left'],['red','right']]){
+      const list=status[side]?.confirmed;if(!list)continue;const player=snapshot.players[localSide],roster=snapshot.rosters[player.rosterId];
+      if(roster?.remoteImportId===list.id)continue;
+      if(typeof list.id!=='string'||list.id.length>80)throw Error('Lista remota inválida.');
+      next[side]={rosterId:player.rosterId,revision:roster?.revision||0,list:{id:list.id,name:validateName(list.name),units:validateUnits(list.units)}};
+     }
+     pending=next;write(pendingFile,pending);return reply(200,view());
+    }
+    if(url.pathname==='/remote-lists/apply'){
+     const p=pending[input.side];if(!['blue','red'].includes(input.side)||!p)throw Error('No hay lista pendiente para ese lado.');
+     const snapshot=getSnapshot(),localSide=input.side==='blue'?'left':'right',player=snapshot.players[localSide],old=snapshot.rosters[p.rosterId];
+     if(player.rosterId!==p.rosterId||(old?.revision||0)!==p.revision)return reply(409,{error:'La lista local o los jugadores cambiaron. Guarda tus cambios y vuelve a sincronizar.'});
+     applyRoster(p.rosterId,{revision:p.revision+1,name:p.list.name,units:p.list.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:p.list.id});delete pending[input.side];write(pendingFile,pending);return reply(200,view());
+    }
+    return reply(404,{error:'Ruta no encontrada.'});
+   }finally{locked=false;}
+  }catch(e){reply(400,{error:e instanceof TypeError?'No se pudo conectar con el backend remoto.':e.message});}
+ }
+ return {handle};
+}
+module.exports={createLocalRemote,backendURL};

@@ -12,7 +12,9 @@
     "prepublishOnly": "npm test",
     "facts:coverage": "node scripts/fact-coverage.js",
     "test-tts": "node scripts/tts-demo.js",
-    "setup-tts": "node scripts/setup-kokoro.js"
+    "setup-tts": "node scripts/setup-kokoro.js",
+    "start:remote-lists": "node remote-lists/start.js",
+    "dev:remote-lists": "node --env-file=.env.dev remote-lists/dev.js"
   },
   "engines": {
     "node": ">=22"
@@ -42,7 +44,8 @@
     "youtube",
     "tts",
     "scripts/tts-demo.js",
-    "scripts/setup-kokoro.js"
+    "scripts/setup-kokoro.js",
+    "remote-lists"
   ],
   "license": "0BSD",
   "publishConfig": {

@@ -25,6 +25,8 @@ test('HTTP and SSE keep working when optional YouTube authentication fails', {ti
     child.on('error',reject);child.on('exit',code=>reject(new Error('Server exited '+code+'\n'+errors)));
   });
   const base='http://127.0.0.1:'+port;
+  assert.deepEqual(await (await fetch(base+'/remote-lists')).json(),{enabled:false});
+  assert.equal((await fetch(base+'/remote-lists/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,404);
   const registry=await (await fetch(base+'/factions.json')).json();
   assert.deepEqual(registry,require('../public/factions.json'));
   assert.equal(Object.values(registry).flat().filter(n=>n!=='Custom').length,28);
@@ -74,6 +76,12 @@ test('HTTP and SSE keep working when optional YouTube authentication fails', {ti
   const savedRosters=JSON.parse(await fs.readFile(path.join(directory,'rosters.json'),'utf8'));assert.deepEqual(savedRosters[id],reordered);
   await post('/state',layout); // Swap back: roster identity follows the same player.
   const linked=await (await fetch(base+'/rosters')).json();assert.equal(linked.players.right.rosterId,id);assert.deepEqual(linked.rosters[id].units,reordered.units);
+  const patch=(unit,body)=>fetch(base+'/rosters/'+id+'/units/'+unit+'/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const changed=await (await patch('unit-a',{battleshocked:false,destroyed:true})).json();
+  assert.equal(changed.revision,3);assert.equal(changed.units[1].battleshocked,false);assert.equal(changed.units[1].deepStrike,true);assert.equal(changed.units[1].destroyed,true);assert.deepEqual(changed.units[0],reordered.units[0]);assert.equal(changed.name,reordered.name);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory,'rosters.json'),'utf8'))[id],changed);
+  assert.equal((await patch('missing',{destroyed:true})).status,404);assert.equal((await patch('unit-a',{name:'overwrite'})).status,400);
+  assert.equal((await post('/rosters/'+id,{revision:2,units:[]})).status,409);
   await post('/state',swapped);
   await post('/game/reset');
   const reset=await (await fetch(base+'/state')).json();

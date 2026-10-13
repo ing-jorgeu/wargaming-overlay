@@ -873,3 +873,144 @@ Para volver a Kokoro, configura `"ttsProvider": "kokoro"` y elimina cualquier `T
 ### Cambios de la versión 3.0.0
 
 Requiere Node 22 o posterior. Incorpora Kokoro local opcional, selección directa de `say` en macOS, prueba puntual con `--test-tts "texto"` y alias `warhammer-overlay`. El modelo se descarga automáticamente solo al usar Kokoro. Incluye las correcciones de lectura de objetivos primarios y continuidad/autenticación del chat que estaban preparadas en el proyecto.
+
+
+### Cambiar estados desde la lista del overlay
+
+Haz clic en una unidad en la pantalla de listas para abrir un menú pequeño con **Battleshocked**, **Destruida** y **En reservas**. Cada opción se activa/desactiva de forma independiente; vuelve a pulsarla para quitar el estado. En los grupos de unidades repetidas puedes pulsar una fila individual o el título del grupo y elegir Unidad 1, Unidad 2, etc. Los cambios se guardan y se sincronizan con el administrador y las demás ventanas sin modificar nombres, personajes, notas ni el orden.
+
+No hay botones permanentes, resaltado al pasar el ratón ni avisos de guardado en el overlay; se conservan las indicaciones existentes de los estados. El menú se cierra al elegir una opción, pulsar fuera o Escape. También se abre con Enter/Espacio sobre una unidad. En OBS usa **Interactuar** para hacer clic en una fuente de navegador. El menú temporal sí forma parte de la página: si no quieres que se vea en emisión, opera una copia de la misma URL en otra ventana del navegador; los estados se sincronizan con OBS.
+
+## Listas remotas desde los teléfonos (opcional)
+
+El mismo repositorio incluye un segundo servicio Node, independiente del overlay. Publica dos páginas móviles fijas: `https://tu-backend/blue` y `https://tu-backend/red`. Los jugadores no necesitan cuenta ni contraseña. El manager habilita/cierra cada lado desde el panel local; ambos empiezan cerrados y vuelven a cerrarse al reiniciar el backend. Al confirmar una lista, ese lado se cierra automáticamente.
+
+### Ejecutar el backend
+
+En el servidor remoto, con Node 22+:
+
+```sh
+npm ci
+# Configura las variables siguientes en el proveedor de hosting, o en un archivo .env privado.
+npm run start:remote-lists
+```
+
+Para cargar un archivo de variables usando Node:
+
+```sh
+node --env-file=/ruta/backend.env remote-lists/start.js
+```
+
+La plantilla versionada es `remote-lists/.env.example`. Cópiala a `.env.dev` para desarrollo local y configura allí las credenciales; `.env.dev` está excluido de Git y del paquete npm. Para cargarla: `node --env-file=.env.dev remote-lists/start.js`. Variables:
+
+| Variable | Valor / uso |
+| --- | --- |
+| `OPENAI_API_KEY` | Obligatoria, solo en el backend remoto. Nunca se envía al jugador ni al Mac. |
+| `OPENAI_MODEL` | `gpt-6-luna` por defecto; modelo compatible con Responses API y JSON Schema estricto. |
+| `REMOTE_LISTS_MANAGER_TOKEN` | Obligatoria, al menos 24 caracteres. Protege los botones y la descarga del manager, no los enlaces de los jugadores. |
+| `REMOTE_LISTS_PORT` | 8080; también acepta `PORT` del hosting. |
+| `REMOTE_LISTS_HOST` | `0.0.0.0`; usa `127.0.0.1` para pruebas solo en el Mac. |
+| `REMOTE_LISTS_DEMO` | `false`; `true` devuelve listas de ejemplo sin OpenAI ni consultas a Wahapedia. No lo actives en producción. |
+| `REMOTE_LISTS_DATA_DIR` | `./remote-lists-data`; **debe ser un volumen persistente**. |
+| `REMOTE_LISTS_TOKEN_BUDGET` | 500000 tokens reservados como máximo durante la vida del archivo de estado. |
+| `REMOTE_LISTS_MAX_IMPORTS` | 2 importaciones por lado y apertura; cada importación real puede hacer hasta dos llamadas al LLM. |
+| `REMOTE_LISTS_MAX_OUTPUT_TOKENS` | 4000 tokens por respuesta. |
+| `REMOTE_LISTS_OPEN_MINUTES` | 30 minutos; cierra las subidas abandonadas. |
+| `REMOTE_LISTS_TRUST_PROXY` | `false`; activa solo si el proxy de confianza **sobrescribe** `X-Forwarded-For` con una única IP cliente y el backend no es accesible por otra vía. |
+
+Puedes generar la credencial del manager con `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` y guardarla como variable del hosting. Los jugadores siguen usando exclusivamente los dos enlaces fijos.
+
+Despliega **una sola instancia/réplica**, con disco persistente y HTTPS mediante tu proveedor o un proxy. El estado se guarda en `lists.json` por reemplazo atómico; el bloqueo y la limitación de frecuencia son por proceso. No uses varias réplicas compartiendo ese archivo. `/health` permite comprobar que el proceso responde. El backend no sirve archivos de datos ni credenciales. El script deja el servidor preparado para desplegar; no contrata hosting ni publica una instancia automáticamente.
+
+### Activar en tu overlay local
+
+```sh
+npm run start -- --remote-lists
+# O con el comando instalado:
+wargaming-overlay start --remote-lists
+```
+
+En **Listas de ejército → Listas desde los teléfonos**, guarda la dirección del backend (por ejemplo `https://listas.ejemplo.com`) y la credencial del manager. La conexión se guarda en `remote-lists-config.json` dentro de la carpeta de datos, con permisos de archivo 0600 en sistemas que los soportan. La API local nunca devuelve la credencial guardada. También puedes configurar `REMOTE_LISTS_URL` y `REMOTE_LISTS_MANAGER_TOKEN` como variables del proceso local; al reiniciar, esas variables tienen prioridad sobre el archivo.
+
+1. Copia el enlace azul o rojo y habilita la subida de ese lado.
+2. El jugador pega el texto exportado de su app, revisa/corrige unidades y confirma. No se asignan personajes a unidades por mera cercanía en el texto.
+3. Pulsa **Sincronizar listas**: descarga las listas confirmadas y las deja pendientes, sin alterar OBS.
+4. Pulsa **Cargar en azul** o **Cargar en rojo** cuando corresponda. Conserva el fondo local, pero reemplaza las unidades y reinicia sus estados para esa nueva lista.
+
+No sincroniza periódicamente ni necesita abrir puertos en tu Mac. Una lista cargada queda guardada localmente y funciona sin internet. Si la lista local o los jugadores cambian entre sincronización y carga, rechaza la carga para no sobrescribirlos: guarda los cambios y vuelve a sincronizar. El panel también impide cargar mientras haya ediciones manuales pendientes. Cargar la misma importación de nuevo no reemplaza estados modificados durante la partida.
+
+**Sin `--remote-lists` no aparecen estos controles, no se cargan credenciales remotas y no se conecta al backend.** El overlay continúa como antes. La prueba `--test-tts` y el backend remoto son funciones independientes.
+
+### Límites de uso y gasto
+
+- Subida cerrada: se rechaza antes de llamar al LLM. Solo el manager autenticado puede abrirla.
+- Hasta 6000 caracteres de texto, una interpretación activa por lado, cupo de intentos por apertura y una vista previa de 10 minutos.
+- Enviar el mismo texto mientras su vista previa siga vigente reutiliza la interpretación. Confirmar, corregir manualmente, consultar y sincronizar no llaman al LLM.
+- El modelo, el máximo de salida y el presupuesto los fija el servidor, no el jugador. No se habilitan herramientas, búsquedas ni ejecución de código en la llamada al modelo.
+- Antes de cada llamada se reserva un límite conservador de tokens (bytes UTF-8 del payload completo, instrucciones, esquema, referencias, margen y máximo de salida). Ambas fases de la interpretación se descuentan por separado antes de enviarse. La reserva **no se devuelve**, incluso ante fallo, para no permitir que errores/reintentos eludan el límite. Es un cupo de tokens, no una medición exacta del gasto en dólares. No incluye uso de esa clave en otras aplicaciones.
+- El presupuesto y los intentos se conservan al reiniciar. Abrir de nuevo reinicia el cupo del lado, pero no el presupuesto global. Para un evento nuevo usa una carpeta de datos nueva; no borres el estado durante una importación.
+- Hasta 60 solicitudes públicas por minuto por IP; una sola instancia. Si estás detrás de un proxy sin la configuración de confianza, el límite puede compartirse entre todos los clientes del proxy.
+
+Los enlaces son públicos: cualquiera que los conozca puede ocupar un turno mientras esté abierto. Estos controles acotan el gasto, pero no identifican al jugador. El manager revisa la lista antes de cargarla en OBS. Las llamadas del LLM se validan de nuevo en el servidor y los textos se muestran como texto, no como HTML.
+
+La integración se prueba con un LLM simulado, incluyendo gasto, cierres, errores, persistencia y sincronización local. Se requiere una clave real y un hosting configurado para validar una importación con el modelo en producción.
+
+
+## Equipo relevante, referencias de 11.ª y pruebas locales
+
+El importador real tiene dos fases: extrae unidades y TODO el equipo declarado, identifica la facción y el nombre inglés de referencia, y luego compara las elecciones con las secciones WARGEAR OPTIONS y UNIT COMPOSITION de Wahapedia **exclusivamente en `/wh40k11ed/`**. Conserva en `notes` reemplazos, añadidos opcionales y elecciones entre alternativas (incluida una opción predeterminada cuando existen alternativas); omite equipo fijo sin alternativas. Mantiene las cantidades declaradas y las notas tácticas. No añade equipo ausente ni comprueba la legalidad de la lista.
+
+Las fichas e índices se guardan en `REMOTE_LISTS_DATA_DIR/references-11`. Cada entrada caduca exactamente **7 días desde su descarga**; al necesitarla de nuevo se elimina la entrada vencida y se renueva. No hay renovación en segundo plano. Si la renovación falla, no se utiliza una referencia vencida ni una de 10.ª: conserva el resumen del equipo original y muestra un aviso para revisión. Las unidades traducidas se buscan mediante el nombre canónico inglés que propone el modelo; si no hay coincidencia exacta, requieren revisión.
+
+Se descargan como máximo 16 fichas distintas por importación, reutilizando fichas para unidades repetidas; el contexto de fuentes se limita a 24 KB. La descarga no usa búsquedas de OpenAI ni concede navegación libre al LLM. La segunda llamada, cuando hay referencias, utiliza solo los fragmentos pertinentes y su consumo se incluye en el cupo persistente de tokens. Si faltan referencias, se muestra un aviso y no se descarta equipo basándose únicamente en la memoria del modelo. Las notas del manager admiten 160 caracteres; el jugador puede corregir los resúmenes antes de confirmar.
+
+### Prueba completa sin clave ni gasto
+
+Desde la raíz del repositorio, instala las dependencias con `npm ci`. Si aún no tienes `.env.dev`, créalo a partir de la plantilla (no sobrescribas uno existente):
+
+```sh
+cp remote-lists/.env.example .env.dev
+```
+
+Para probar solo en tu computadora, configura `REMOTE_LISTS_HOST=127.0.0.1` en ese archivo. Después abre dos terminales:
+
+```sh
+# Terminal 1: backend DEMO. Carga .env.dev, pero no usa su clave OpenAI.
+npm run dev:remote-lists
+
+# Terminal 2: tu overlay local habitual, con los nuevos controles.
+npm run start -- --remote-lists
+```
+
+1. Abre `http://127.0.0.1:8765` y entra en **Listas de ejército**.
+2. Guarda la conexión `http://127.0.0.1:8080` y el valor `REMOTE_LISTS_MANAGER_TOKEN` de `.env.dev`. Si está vacío, el script demo usa `demo-manager-token-local-only`. Solo es una credencial de prueba: para producción configura una propia de al menos 24 caracteres.
+3. Pulsa **Habilitar subida azul**. Abre `http://127.0.0.1:8080/blue` en otra pestaña; para rojo usa `/red` y habilita ese lado.
+4. Pega `remote-lists/examples/demo-list.txt`. Pulsa **Interpretar lista**, cambia un comentario y confirma.
+5. Vuelve al panel: pulsa **Sincronizar listas** y **Cargar en azul**. Abre la lista para OBS y comprueba nombres y comentarios.
+
+El modo demo está identificado en la página y devuelve una respuesta predefinida. Prueba revisión, edición, guardado, cierre y sincronización; **no demuestra la calidad de la interpretación ni consulta fichas reales**. `npm run dev:remote-lists` fuerza el modo demo aunque `.env.dev` diga `REMOTE_LISTS_DEMO=false`.
+
+### Prueba real con OpenAI y Wahapedia
+
+Detén el backend demo. En `.env.dev`, sustituye `OPENAI_API_KEY` por tu clave, configura la credencial del manager y deja `REMOTE_LISTS_DEMO=false`. Inicia:
+
+```sh
+node --env-file=.env.dev remote-lists/start.js
+```
+
+Repite el mismo flujo con una lista real de 11.ª. Esta prueba sí usa internet y consume tokens. Usa una clave con permisos de escritura para Responses API y acceso al modelo. Si falta una ficha o Wahapedia no responde, el resultado mostrará qué equipo necesita revisión. El coste y la calidad reales del LLM no se han verificado sin una clave real.
+
+### Probar desde un teléfono físico
+
+Teléfono y Mac deben estar en la misma Wi-Fi. Cambia `REMOTE_LISTS_HOST=0.0.0.0` en `.env.dev`, reinicia el backend y abre en el teléfono `http://IP_LOCAL_DEL_MAC:8080/blue` o `/red`. Puedes consultar la IP en los ajustes de Wi-Fi de macOS. El panel local sigue conectándose a `http://127.0.0.1:8080`; sus enlaces localhost deben sustituirse por la IP del Mac para esta prueba. Si macOS pide permiso para conexiones entrantes de Node, habilítalo para la prueba. No requiere abrir puertos del router. HTTP y credenciales ficticias son solo para desarrollo; en hosting usa HTTPS.
+
+La página adapta la revisión a una columna en teléfono y dos en escritorio, con botones de al menos 44 px y entradas de 16 px para evitar zoom al escribir. La carga de texto y la edición del resultado funcionan en ambos tamaños. Puedes usar **Volver al texto** para reinterpretar; un texto idéntico reutiliza su vista previa mientras no venza y la subida siga abierta.
+
+### Verificación automática
+
+```sh
+npm test
+node --test test/wargear-references.test.js test/remote-lists.test.js
+```
+
+Las pruebas verifican caducidad exacta a los siete días, rechazo de referencias/redirects de 10.ª, conservación del equipo sin referencia, comparación con índices de unidades y cobro de ambas fases antes de enviar peticiones. También comprueban presupuestos, autenticación del manager, subidas cerradas, persistencia, confirmación y protección de listas locales.

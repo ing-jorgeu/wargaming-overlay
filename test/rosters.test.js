@@ -30,3 +30,9 @@ test('battleshocked is optional for old lists, preserves true and rejects invali
  assert.equal(validateUnits([{...unit,battleshocked:true}])[0].battleshocked,true);
  assert.throws(()=>validateUnits([{...unit,battleshocked:'yes'}]));
 });
+test('overlay status edits preserve list content and other units while allowing independent flags',()=>{
+ const {updateUnitStatus}=require('../rosters');const roster={revision:4,name:'List',backgroundUrl:'https://example.com/bg',units:[{id:'a',name:'Squad',characters:['Captain'],notes:'note',destroyed:false,deepStrike:true,battleshocked:false},{id:'b',name:'Squad',destroyed:false}]};
+ const next=updateUnitStatus(roster,'a',{battleshocked:true});assert.equal(next.revision,5);assert.equal(next.units[0].battleshocked,true);assert.equal(next.units[0].deepStrike,true);assert.equal(next.units[0].notes,'note');assert.equal(next.units[1],roster.units[1]);assert.equal(roster.units[0].battleshocked,false);assert.equal(next.name,roster.name);
+ assert.equal(updateUnitStatus(next,'a',{battleshocked:false}).units[0].battleshocked,false);
+ for(const bad of [{},{name:'different'},{destroyed:'true'},[]])assert.throws(()=>updateUnitStatus(roster,'a',bad));assert.throws(()=>updateUnitStatus(roster,'missing',{destroyed:true}));
+});

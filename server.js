@@ -51,7 +51,7 @@ const defaultState = {
 let state = defaultState;
 try { state = { ...defaultState, ...JSON.parse(fs.readFileSync(statePath, 'utf8')) }; }
 catch { /* First run: use the defaults. */ }
-const {linkPlayers,validateUnits,validateBackground,validateName}=require('./rosters');
+const {linkPlayers,validateUnits,validateBackground,validateName,updateUnitStatus}=require('./rosters');
 state=linkPlayers(state,state);
 saveState();
 const rostersPath=path.join(dataDir,'rosters.json');
@@ -88,15 +88,29 @@ async function readToastBody(req,limit=8192) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
+const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./remote-lists/local').createLocalRemote({enabled:true,dataDir,getSnapshot:rosterSnapshot,applyRoster:(id,roster)=>{
+ const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;broadcastRosters();
+}}):null;
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control','no-store');
   const url = new URL(req.url, 'http://localhost');
+  if(url.pathname==='/remote-lists'||url.pathname.startsWith('/remote-lists/')){if(remoteLists)return remoteLists.handle(req,res,url);return send(res,url.pathname==='/remote-lists'&&req.method==='GET'?200:404,'application/json',JSON.stringify({enabled:false}));}
   if(url.pathname==='/rosters/events' && req.method==='GET'){
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache',Connection:'keep-alive'});
     rosterListeners.add(res);res.write(`data: ${JSON.stringify(rosterSnapshot())}\n\n`);
     req.on('close',()=>rosterListeners.delete(res));return;
   }
   if(url.pathname==='/rosters' && req.method==='GET')return send(res,200,'application/json',JSON.stringify(rosterSnapshot()));
+  const statusRoute=url.pathname.match(/^\/rosters\/([a-zA-Z0-9_-]+)\/units\/([a-zA-Z0-9_-]+)\/status$/);
+  if(statusRoute && req.method==='PATCH'){
+    try{
+      const input=await readToastBody(req,2000),[,id,unitId]=statusRoute;
+      if(![state.left.rosterId,state.right.rosterId].includes(id)||!rosters[id]?.units?.some(u=>u.id===unitId))return send(res,404,'application/json',JSON.stringify({error:'Unidad no encontrada.'}));
+      const roster=updateUnitStatus(rosters[id],unitId,input),next={...rosters,[id]:roster};
+      fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;
+      broadcastRosters();return send(res,200,'application/json',JSON.stringify(roster));
+    }catch(e){return send(res,400,'application/json',JSON.stringify({error:e.message}));}
+  }
   if(url.pathname.startsWith('/rosters/') && req.method==='POST'){
     try{
       const id=url.pathname.slice('/rosters/'.length);
@@ -104,7 +118,7 @@ const server = http.createServer(async (req, res) => {
       const input=await readToastBody(req,200000);
       const old=rosters[id]||{revision:0,units:[]};
       if(input.revision!==old.revision)return send(res,409,'application/json',JSON.stringify({error:'La lista cambió en otro panel. Recarga antes de guardar.'}));
-      const roster={revision:old.revision+1,name:validateName(input.name??old.name??''),units:validateUnits(input.units),backgroundUrl:validateBackground(input.backgroundUrl??old.backgroundUrl??'')};
+      const roster={revision:old.revision+1,...(old.remoteImportId?{remoteImportId:old.remoteImportId}:{}),name:validateName(input.name??old.name??''),units:validateUnits(input.units),backgroundUrl:validateBackground(input.backgroundUrl??old.backgroundUrl??'')};
       const next={...rosters,[id]:roster};
       fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;
       broadcastRosters();return send(res,200,'application/json',JSON.stringify(roster));

@@ -1,7 +1,38 @@
 (()=>{
  const $=s=>document.querySelector(s),stage=$('#army-stage'),params=new URLSearchParams(location.search),id=params.get('player');
- let snapshot;
+ let snapshot,menu;
  const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
+ function closeMenu(){menu?.remove();menu=null;}
+ function editable(node,rosterId,units){
+  node.tabIndex=0;node.setAttribute('aria-haspopup','menu');
+  const open=e=>{e.stopPropagation();openMenu(rosterId,units,e.clientX??node.getBoundingClientRect().left,e.clientY??node.getBoundingClientRect().bottom);};
+  node.addEventListener('click',open);node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e);}});
+ }
+ function openMenu(rosterId,units,x,y){
+  closeMenu();menu=el('div',null,'unit-context-menu');menu.setAttribute('role','menu');
+  const popup=menu;
+  function position(){popup.style.left=Math.max(8,Math.min(x,innerWidth-popup.offsetWidth-8))+'px';popup.style.top=Math.max(8,Math.min(y,innerHeight-popup.offsetHeight-8))+'px';}
+  function choose(unit){
+   popup.replaceChildren(el('p',unit.name,'context-title'));
+   for(const [key,label] of [['battleshocked','Battleshocked'],['destroyed','Destruida'],['deepStrike','En reservas']]){
+    const button=el('button',label);button.type='button';button.setAttribute('role','menuitemcheckbox');button.setAttribute('aria-checked',String(unit[key]===true));button.classList.toggle('checked',unit[key]===true);
+    button.onclick=async e=>{e.stopPropagation();closeMenu();try{
+     const response=await fetch('/rosters/'+encodeURIComponent(rosterId)+'/units/'+encodeURIComponent(unit.id)+'/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({[key]:unit[key]!==true})});
+     if(!response.ok)throw Error('No se pudo guardar el estado de la unidad.');
+     // SSE publishes the canonical list, including edits made in other panels.
+    }catch(error){console.error(error.message);}};
+    popup.append(button);
+   }
+   position();popup.querySelector('button')?.focus({preventScroll:true});
+  }
+  document.body.append(popup);
+  if(units.length===1)choose(units[0]);else{
+   popup.append(el('p',units[0].name,'context-title'));
+   units.forEach((unit,i)=>{const button=el('button','Unidad '+(i+1));button.type='button';button.setAttribute('role','menuitem');button.onclick=e=>{e.stopPropagation();choose(unit);};popup.append(button);});position();popup.querySelector('button')?.focus({preventScroll:true});
+  }
+ }
+ document.addEventListener('click',e=>{if(menu&&!menu.contains(e.target))closeMenu();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
  function fit(){
   const root=$('#army-units');
   // Multicolumn flow retains order; reduce typography only as needed to fit all content.
@@ -14,6 +45,7 @@
  }
  function render(){
   if(!snapshot)return;
+  closeMenu();
   const requestedSide=params.get('side')||'blue',resolvedSide=({blue:'left',red:'right'})[requestedSide]||requestedSide;
   const entry=Object.entries(snapshot.players).find(([side,p])=>p.rosterId===id||(!id&&side===resolvedSide));
   const root=$('#army-units');root.replaceChildren();
@@ -28,9 +60,11 @@
   for(const group of RosterView.groupUnits(units)){
    const block=el('section',null,'army-group'),heading=el('h2',group.name+(group.units.length>1?' ×'+group.units.length:''),'group-name');
    const hasLeaders=group.units.some(u=>u.characters.length);
-   if(group.units.every(u=>u.destroyed))heading.classList.add('all-destroyed');if(!hasLeaders)block.append(heading);
+   if(group.units.every(u=>u.destroyed))heading.classList.add('all-destroyed');if(!hasLeaders&&group.units.length>1){block.append(heading);editable(heading,p.rosterId,group.units);}
    group.units.forEach((u,i)=>{
     const row=el('div',null,'army-member'+(u.destroyed?' destroyed':''));
+    editable(row,p.rosterId,[u]);
+    if(!hasLeaders&&group.units.length===1)row.append(heading);
     if(hasLeaders){
      row.append(el('h2',u.characters.length?u.characters.join(' · '):u.name,'group-name member-title'));
      if(u.characters.length)row.append(el('p','Lidera: '+u.name,'unit-detail led-unit'));
@@ -41,7 +75,7 @@
     if(label.childNodes.length)row.append(label);
     const detail=(name,text)=>{if(!text)return;const line=el('p',null,'unit-detail');line.append(el('strong',name+' '),document.createTextNode(text));row.append(line);};
     detail('Mejora:',u.enhancement);if(u.notes)row.append(el('p',u.notes,'unit-detail unit-notes'));
-    if(row.childNodes.length)block.append(row);
+    block.append(row);
    });root.append(block);
   }
   if(!units.length)root.append(el('p','Lista pendiente de cargar','army-empty'));
@@ -50,6 +84,7 @@
  const stream=new EventSource('/rosters/events');stream.onmessage=e=>{snapshot=JSON.parse(e.data);$('#army-status').textContent='';render();};stream.onerror=()=>{$('#army-status').textContent='Reconectando · última lista guardada';};
  $('#army-background').onerror=()=>{$('#army-background').hidden=true;$('#army-status').textContent='No se pudo cargar la imagen de fondo';};
  function resize(){
+  closeMenu();
   const scale=Math.min(innerWidth/1920,innerHeight/1080);
   stage.style.width=(innerWidth/scale)+'px';stage.style.height=(innerHeight/scale)+'px';
   stage.style.transform=`translate(-50%,-50%) scale(${scale})`;

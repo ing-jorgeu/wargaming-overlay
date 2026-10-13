@@ -6,3 +6,6 @@ credentials*.json
 tokens.json
 youtube-tokens.json
 *.tgz
+
+remote-lists-data/
+!.env.example

@@ -36,4 +36,10 @@ function validateName(value=''){
  if(typeof value!=='string'||value.length>80)throw Error('Nombre de lista: máximo 80 caracteres.');
  return value.trim();
 }
-module.exports={linkPlayers,validateUnits,validateBackground,validateName};
+function updateUnitStatus(roster,id,input){
+ const keys=['battleshocked','destroyed','deepStrike'];
+ if(!input||typeof input!=='object'||Array.isArray(input)||!Object.keys(input).length||Object.keys(input).some(k=>!keys.includes(k)||typeof input[k]!=='boolean'))throw Error('Solo se pueden cambiar estados de unidad con true o false.');
+ if(!roster?.units?.some(u=>u.id===id))throw Error('Unidad no encontrada.');
+ return {...roster,revision:roster.revision+1,units:roster.units.map(u=>u.id===id?{...u,...input}:u)};
+}
+module.exports={linkPlayers,validateUnits,validateBackground,validateName,updateUnitStatus};

@@ -16,3 +16,4 @@
 .control .drag-handle{cursor:grab;padding:6px 10px;background:transparent;color:#e2bd78;font-size:26px;touch-action:none}.drag-handle:active{cursor:grabbing}.unit-editor.dragging{opacity:.4}.unit-editor.drag-over{outline:2px solid #d9ad4a;outline-offset:3px}
 
 .drag-handle{touch-action:none;user-select:none}
+#remote-lists-panel{padding:20px;margin:20px 0;border:1px solid #52647c;border-radius:8px}#remote-lists-panel input{width:100%}#remote-lists-panel a{display:block;margin:12px 0;color:#94beef}#remote-lists-panel button{margin:6px 8px 6px 0}
