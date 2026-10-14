@@ -1,6 +1,6 @@
 const {isIP}=require('node:net');
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
-const {timingSafeEqual,randomUUID,createHash}=require('node:crypto');const {cleanList,groupLeaders,tokenReservation}=require('./importer');
+const {timingSafeEqual,randomUUID}=require('node:crypto');const {cleanList,tokenReservation}=require('./importer');
 const sides=['blue','red'];
 function fail(message,status=400){return Object.assign(Error(message),{status});}
 function send(res,status,value){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(value));}
@@ -39,7 +39,7 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     throw fail('Ruta no encontrada.',404);
    }
    rate(req);
-   const side=url.pathname.match(/^\/api\/(blue|red)\/(status|import|confirm)$/)?.[1];
+   const side=url.pathname.match(/^\/api\/(blue|red)\/(status|import)$/)?.[1];
    const action=url.pathname.split('/').at(-1);
    if(side&&action==='status'&&req.method==='GET')return send(res,200,publicStatus(side));
    if(side&&action==='import'&&req.method==='POST'){
@@ -47,8 +47,6 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     const input=await readJSON(req);const slot=data[side];
     if(!isOpen(side))throw fail('La subida se cerró.',403);
     if(typeof input.text!=='string'||!input.text.trim()||input.text.length>6000)throw fail('Pega una lista de 1 a 6000 caracteres.');
-    const textHash=createHash('sha256').update(input.text).digest('hex');
-    if(slot.draft?.textHash===textHash&&slot.draft.expires>now()&&slot.draft.generation===slot.generation)return send(res,200,slot.draft);
     if(busy.has(side))throw fail('Ya se está interpretando una lista de este lado.',409);
     if(slot.attempts>=maxImports)throw fail('Se agotaron los intentos. Pide al manager que vuelva a habilitar la subida.',429);
     const reserveTokens=amount=>{if(!isOpen(side)||slot.generation!==generation)throw fail('La subida se cerró.',409);if(!Number.isSafeInteger(amount)||amount<1||data.reservedTokens+amount>tokenBudget)throw fail('Se alcanzó el presupuesto del servicio. Contacta al manager.',429);data.reservedTokens+=amount;save();};
@@ -58,13 +56,8 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     try{
      let list;try{list=cleanList(await importer(input.text,{reserveTokens}));}catch(e){if(e.status)throw e;throw fail('No se pudo interpretar la lista. Puedes reintentar si quedan intentos.',502);}
      if(!isOpen(side)||slot.generation!==generation)throw fail('El manager cerró o cambió la subida. No se guardó esta interpretación.',409);
-     const draft={...list,textHash,id:randomUUID(),expires:now()+10*60000,generation};slot.draft=draft;save();return send(res,200,draft);
+     slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
     }finally{busy.delete(side);}
-   }
-   if(side&&action==='confirm'&&req.method==='POST'){
-    const input=await readJSON(req,60000),slot=data[side],draft=slot.draft;
-    if(!isOpen(side)||!draft||draft.expires<now()||draft.id!==input.id||draft.generation!==slot.generation)throw fail('La vista previa expiró o la subida se cerró.',409);
-    const list=cleanList({name:input.name,armyFaction:input.armyFaction??draft.armyFaction,detachments:input.detachments??draft.detachments,units:input.units,warnings:draft.warnings});const grouped=groupLeaders(list.units,input.units.map(u=>u.leaderOf??-1));list.units=grouped.units;list.warnings.push(...grouped.warnings);slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
    }
    const staticFiles={'/blue':'player.html','/red':'player.html','/player.js':'player.js','/player.css':'player.css'};
    if(req.method==='GET'&&staticFiles[url.pathname]){const f=staticFiles[url.pathname];res.writeHead(200,{'Content-Type':f.endsWith('.js')?'application/javascript':f.endsWith('.css')?'text/css':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(__dirname,'public',f)));}

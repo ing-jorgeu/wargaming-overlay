@@ -883,7 +883,7 @@ No hay botones permanentes, resaltado al pasar el ratón ni avisos de guardado e
 
 ## Listas remotas desde los teléfonos (opcional)
 
-El mismo repositorio incluye un segundo servicio Node, independiente del overlay. Publica dos páginas móviles fijas: `https://tu-backend/blue` y `https://tu-backend/red`. Los jugadores no necesitan cuenta ni contraseña. El manager habilita/cierra cada lado desde el panel local; ambos empiezan cerrados y vuelven a cerrarse al reiniciar el backend. Al confirmar una lista, ese lado se cierra automáticamente.
+El mismo repositorio incluye un segundo servicio Node, independiente del overlay. Publica dos páginas móviles fijas: `https://tu-backend/blue` y `https://tu-backend/red`. Los jugadores no necesitan cuenta ni contraseña. El manager habilita/cierra cada lado desde el panel local; ambos empiezan cerrados y vuelven a cerrarse al reiniciar el backend. Al terminar de analizar y guardar una lista, ese lado se cierra automáticamente.
 
 ### Ejecutar el backend
 
@@ -933,8 +933,8 @@ wargaming-overlay start --remote-lists
 En **Listas de ejército → Listas desde los teléfonos**, guarda la dirección del backend (por ejemplo `https://listas.ejemplo.com`) y la credencial del manager. La conexión se guarda en `remote-lists-config.json` dentro de la carpeta de datos, con permisos de archivo 0600 en sistemas que los soportan. La API local nunca devuelve la credencial guardada. También puedes configurar `REMOTE_LISTS_URL` y `REMOTE_LISTS_MANAGER_TOKEN` como variables del proceso local; al reiniciar, esas variables tienen prioridad sobre el archivo.
 
 1. Copia el enlace azul o rojo y habilita la subida de ese lado.
-2. El jugador pega el texto exportado de su app, revisa/corrige unidades y confirma. No se asignan personajes a unidades por mera cercanía en el texto.
-3. Pulsa **Sincronizar listas**: descarga y aplica inmediatamente las listas confirmadas al lado correspondiente, incluyendo facción y destacamentos. Conserva el fondo local y reinicia los estados solo cuando llega una importación nueva. No hay un segundo botón de carga.
+2. El jugador pega el texto exportado de su app y pulsa **Subir lista**. El servidor analiza y guarda automáticamente el resultado; el jugador solo recibe la confirmación de éxito. No se asignan personajes a unidades por mera cercanía en el texto.
+3. Pulsa **Sincronizar listas**: descarga y aplica inmediatamente las listas guardadas al lado correspondiente, incluyendo facción y destacamentos. Conserva el fondo local y reinicia los estados solo cuando llega una importación nueva. No hay un segundo botón de carga.
 
 No sincroniza periódicamente ni necesita abrir puertos en tu Mac. Una lista cargada queda guardada localmente y funciona sin internet. Si la lista local o los jugadores cambian durante la descarga, rechaza la sincronización para no sobrescribirlos: guarda los cambios y vuelve a sincronizar. El panel también impide cargar mientras haya ediciones manuales pendientes. Cargar la misma importación de nuevo no reemplaza estados modificados durante la partida.
 
@@ -943,25 +943,25 @@ No sincroniza periódicamente ni necesita abrir puertos en tu Mac. Una lista car
 ### Límites de uso y gasto
 
 - Subida cerrada: se rechaza antes de llamar al LLM. Solo el manager autenticado puede abrirla.
-- Hasta 6000 caracteres de texto, una interpretación activa por lado, cupo de intentos por apertura y una vista previa de 10 minutos.
-- Enviar el mismo texto mientras su vista previa siga vigente reutiliza la interpretación. Confirmar, corregir manualmente, consultar y sincronizar no llaman al LLM.
+- Hasta 6000 caracteres de texto, una interpretación activa por lado, cupo de intentos por apertura .
+- Una subida exitosa cierra el lado y bloquea nuevos envíos hasta que el manager lo habilite otra vez. Consultar y sincronizar no llaman al LLM.
 - El modelo, el máximo de salida y el presupuesto los fija el servidor, no el jugador. No se habilitan herramientas, búsquedas ni ejecución de código en la llamada al modelo.
 - Antes de cada llamada se reserva un límite conservador de tokens (bytes UTF-8 del payload completo, instrucciones, esquema, referencias, margen y máximo de salida). Ambas fases de la interpretación se descuentan por separado antes de enviarse. La reserva **no se devuelve**, incluso ante fallo, para no permitir que errores/reintentos eludan el límite. Es un cupo de tokens, no una medición exacta del gasto en dólares. No incluye uso de esa clave en otras aplicaciones.
 - El presupuesto y los intentos se conservan al reiniciar. Abrir de nuevo reinicia el cupo del lado, pero no el presupuesto global. Para un evento nuevo usa una carpeta de datos nueva; no borres el estado durante una importación.
 - Hasta 60 solicitudes públicas por minuto por IP; una sola instancia. Si estás detrás de un proxy sin la configuración de confianza, el límite puede compartirse entre todos los clientes del proxy.
 
-Los enlaces son públicos: cualquiera que los conozca puede ocupar un turno mientras esté abierto. Estos controles acotan el gasto, pero no identifican al jugador. El manager revisa la lista antes de cargarla en OBS. Las llamadas del LLM se validan de nuevo en el servidor y los textos se muestran como texto, no como HTML.
+Los enlaces son públicos: cualquiera que los conozca puede ocupar un turno mientras esté abierto. Estos controles acotan el gasto, pero no identifican al jugador. El manager puede corregir las listas desde su editor local después de sincronizar. Las llamadas del LLM se validan de nuevo en el servidor y los textos se muestran como texto, no como HTML.
 
 La integración se prueba con un LLM simulado, incluyendo gasto, cierres, errores, persistencia y sincronización local. Se requiere una clave real y un hosting configurado para validar una importación con el modelo en producción.
 
 
 ## Equipo relevante, referencias de 11.ª y pruebas locales
 
-El importador real tiene dos fases: extrae unidades y TODO el equipo declarado, identifica la facción y el nombre inglés de referencia, y luego compara las elecciones con las secciones WARGEAR OPTIONS y UNIT COMPOSITION de Wahapedia **exclusivamente en `/wh40k11ed/`**. Conserva en `notes` reemplazos, añadidos opcionales y elecciones entre alternativas (incluida una opción predeterminada cuando existen alternativas); omite equipo fijo sin alternativas. Mantiene las cantidades declaradas y las notas tácticas. No añade equipo ausente ni comprueba la legalidad de la lista.
+El importador real tiene dos fases: extrae unidades y TODO el equipo declarado, identifica la facción y el nombre inglés de referencia, y luego compara las elecciones con las secciones WARGEAR OPTIONS y UNIT COMPOSITION de Wahapedia **exclusivamente en `/wh40k11ed/`**. Conserva en `notes` reemplazos, añadidos opcionales y elecciones entre alternativas (incluida una opción predeterminada cuando existen alternativas); omite equipo fijo sin alternativas. Mantiene las cantidades declaradas; las notas generadas se limitan a elecciones de equipo verificadas. No añade equipo ausente ni comprueba la legalidad de la lista.
 
-Las fichas e índices se guardan en `REMOTE_LISTS_DATA_DIR/references-11`. Cada entrada caduca exactamente **7 días desde su descarga**; al necesitarla de nuevo se elimina la entrada vencida y se renueva. No hay renovación en segundo plano. Si la renovación falla, no se utiliza una referencia vencida ni una de 10.ª: conserva el resumen del equipo original y muestra un aviso para revisión. Las unidades traducidas se buscan mediante el nombre canónico inglés que propone el modelo; si no hay coincidencia exacta, requieren revisión.
+Las fichas e índices se guardan en `REMOTE_LISTS_DATA_DIR/references-11`. Cada entrada caduca exactamente **7 días desde su descarga**; al necesitarla de nuevo se elimina la entrada vencida y se renueva. No hay renovación en segundo plano. Si la renovación falla, no se utiliza una referencia vencida ni una de 10.ª: deja vacías las notas de equipo que no puede verificar y muestra un aviso para revisión. Las unidades traducidas se buscan mediante el nombre canónico inglés que propone el modelo; si no hay coincidencia exacta, requieren revisión.
 
-Se descargan como máximo 16 fichas distintas por importación, reutilizando fichas para unidades repetidas; el contexto de fuentes se limita a 24 KB. La descarga no usa búsquedas de OpenAI ni concede navegación libre al LLM. La segunda llamada, cuando hay referencias, utiliza solo los fragmentos pertinentes y su consumo se incluye en el cupo persistente de tokens. Si faltan referencias, se muestra un aviso y no se descarta equipo basándose únicamente en la memoria del modelo. Las notas del manager admiten 160 caracteres; el jugador puede corregir los resúmenes antes de confirmar.
+Se descargan como máximo 16 fichas distintas por importación, reutilizando fichas para unidades repetidas; el contexto de fuentes se limita a 24 KB. La descarga no usa búsquedas de OpenAI ni concede navegación libre al LLM. La segunda llamada, cuando hay referencias, utiliza solo los fragmentos pertinentes y su consumo se incluye en el cupo persistente de tokens. Si faltan referencias, se muestra un aviso en el manager al sincronizar y no se publica equipo sin verificar basándose en la memoria del modelo. Las notas del manager admiten 160 caracteres; el manager puede corregir los resúmenes en el editor local.
 
 ### Prueba completa sin clave ni gasto
 
@@ -984,10 +984,10 @@ npm run start -- --remote-lists
 1. Abre `http://127.0.0.1:8765` y entra en **Listas de ejército**.
 2. Guarda la conexión `http://127.0.0.1:8080` y el valor `REMOTE_LISTS_MANAGER_TOKEN` de `.env.dev`. Si está vacío, el script demo usa `demo-manager-token-local-only`. Solo es una credencial de prueba: para producción configura una propia de al menos 24 caracteres.
 3. Pulsa **Habilitar subida azul**. Abre `http://127.0.0.1:8080/blue` en otra pestaña; para rojo usa `/red` y habilita ese lado.
-4. Pega `remote-lists/examples/demo-list.txt`. Pulsa **Interpretar lista**, cambia un comentario y confirma.
+4. Pega `remote-lists/examples/demo-list.txt`. Pulsa **Subir lista** y espera el mensaje de éxito.
 5. Vuelve al panel: pulsa **Sincronizar listas**. Abre la lista para OBS y comprueba nombres y comentarios.
 
-El modo demo está identificado en la página y devuelve una respuesta predefinida. Prueba revisión, edición, guardado, cierre y sincronización; **no demuestra la calidad de la interpretación ni consulta fichas reales**. `npm run dev:remote-lists` fuerza el modo demo aunque `.env.dev` diga `REMOTE_LISTS_DEMO=false`.
+El modo demo está identificado en la página y devuelve una respuesta predefinida. Prueba análisis, guardado automático, cierre y sincronización; **no demuestra la calidad de la interpretación ni consulta fichas reales**. `npm run dev:remote-lists` fuerza el modo demo aunque `.env.dev` diga `REMOTE_LISTS_DEMO=false`.
 
 ### Prueba real con OpenAI y Wahapedia
 
@@ -1003,7 +1003,7 @@ Repite el mismo flujo con una lista real de 11.ª. Esta prueba sí usa internet 
 
 Teléfono y Mac deben estar en la misma Wi-Fi. Cambia `REMOTE_LISTS_HOST=0.0.0.0` en `.env.dev`, reinicia el backend y abre en el teléfono `http://IP_LOCAL_DEL_MAC:8080/blue` o `/red`. Puedes consultar la IP en los ajustes de Wi-Fi de macOS. El panel local sigue conectándose a `http://127.0.0.1:8080`; sus enlaces localhost deben sustituirse por la IP del Mac para esta prueba. Si macOS pide permiso para conexiones entrantes de Node, habilítalo para la prueba. No requiere abrir puertos del router. HTTP y credenciales ficticias son solo para desarrollo; en hosting usa HTTPS.
 
-La página adapta la revisión a una columna en teléfono y dos en escritorio, con botones de al menos 44 px y entradas de 16 px para evitar zoom al escribir. La carga de texto y la edición del resultado funcionan en ambos tamaños. Puedes usar **Volver al texto** para reinterpretar; un texto idéntico reutiliza su vista previa mientras no venza y la subida siga abierta.
+La página funciona en teléfono y computadora, con entradas de 16 px y botones de al menos 44 px. El jugador pega el texto y pulsa **Subir lista**: aparece un indicador de carga y, al guardar, únicamente el mensaje de éxito. Si falla, conserva el texto para reintentar. No hay vista previa, editor ni paso de confirmación.
 
 ### Verificación automática
 
@@ -1012,14 +1012,20 @@ npm test
 node --test test/wargear-references.test.js test/remote-lists.test.js
 ```
 
-Las pruebas verifican caducidad exacta a los siete días, rechazo de referencias/redirects de 10.ª, conservación del equipo sin referencia, comparación con índices de unidades y cobro de ambas fases antes de enviar peticiones. También comprueban presupuestos, autenticación del manager, subidas cerradas, persistencia, confirmación y protección de listas locales.
+Las pruebas verifican caducidad exacta a los siete días, rechazo de referencias/redirects de 10.ª, omisión del equipo sin referencia, aceptación de fichas sin opciones, exclusión del equipo fijo y comparación con índices de unidades y cobro de ambas fases antes de enviar peticiones. También comprueban presupuestos, autenticación del manager, subidas cerradas, persistencia, guardado automático y protección de listas locales.
 
 ### Facción, destacamentos, líderes y notas
 
-El prompt recibe el catálogo de facciones del manager. El jugador puede corregir facción y destacamentos en la vista previa; al sincronizar se asignan automáticamente al jugador correspondiente. Si no se pudo identificar un dato, no se inventa. Para listas confirmadas antes de esta función, vuelve a interpretar y confirmar para incorporar esos campos.
+El prompt recibe el catálogo de facciones del manager. La facción y los destacamentos se extraen automáticamente y al sincronizar se asignan al jugador correspondiente. El manager puede corregirlos en su panel. Si no se pudo identificar un dato, no se inventa. Para listas confirmadas antes de esta función, vuelve a subir la lista para incorporar esos campos.
 
-Los personajes con una asignación explícita se incorporan a `characters` de la unidad liderada y se muestran juntos en una tarjeta, conservando mejoras y notas. El título muestra todos los líderes y apoyos unidos por «+», y debajo aparece el nombre de la unidad liderada. Si la exportación no declara la asignación, el jugador puede elegir **Unir como líder de** antes de confirmar. No se deduce la asociación por proximidad en el texto.
+Los personajes con una asignación explícita se incorporan a `characters` de la unidad liderada y se muestran juntos en una tarjeta, conservando mejoras y notas. El título muestra todos los líderes y apoyos unidos por «+», y debajo aparece el nombre de la unidad liderada. Si la exportación no declara la asignación, los personajes se conservan separados y el manager puede asignarlos en su editor local. No se deduce la asociación por proximidad en el texto.
 
 Las notas generadas usan cantidades y nombres breves, un elemento por línea, con un máximo total de 160 caracteres. El overlay presenta cada línea como un bullet; también admite notas antiguas separadas por punto y coma. Si las notas combinadas de un líder y su unidad exceden el límite, el resultado se recorta y muestra un aviso para revisión.
 
 La página del jugador muestra un indicador de carga durante el análisis, lo retira tanto al terminar como ante un error y mantiene el botón deshabilitado para evitar envíos duplicados.
+
+### Evitar equipo obligatorio en los comentarios
+
+La extracción inicial conserva el equipo declarado internamente en `wargear`, pero deja `notes` vacío. Las fichas de 11.ª con UNIT COMPOSITION y sin WARGEAR OPTIONS se aceptan como equipo fijo: no generan notas ni necesitan una segunda llamada al LLM. Esto también se aplica a los líderes y apoyos antes de agruparlos con su unidad. Por ejemplo, las armas obligatorias de Belisarius Cawl y Cybernetica Datasmith no aparecen en el overlay.
+
+Solo las fichas con opciones pasan a la comparación de elecciones. Si falta una ficha, caduca y no se puede renovar, o falta un resultado de comparación, las notas permanecen vacías y aparece un aviso en el manager al sincronizar. No se usa el listado completo de armas como respaldo. Las listas ya confirmadas no se reescriben: después de desplegar el backend actualizado, habilita la subida y vuelve a subir y sincronizar la lista.

@@ -38,7 +38,7 @@ function createLocalRemote({enabled,dataDir,env=process.env,getSnapshot,applyRos
       const clean=cleanList(list);changes.push({side,id:player.rosterId,roster:{revision:(old?.revision||0)+1,name:clean.name,units:clean.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:list.id},metadata:{faction:clean.armyFaction,detachments:clean.detachments}});
      }
      for(const change of changes)applyRoster(change.id,change.roster,change.metadata);
-     pending={};write(pendingFile,pending);return reply(200,{...view(),synced:changes.map(c=>c.side)});
+     pending={};write(pendingFile,pending);return reply(200,{...view(),synced:changes.map(c=>c.side),warnings:Object.fromEntries(['blue','red'].map(side=>[side,status[side]?.confirmed?.warnings||[]]))});
     }
     if(url.pathname==='/remote-lists/apply'){
      const p=pending[input.side];if(!['blue','red'].includes(input.side)||!p)throw Error('No hay lista pendiente para ese lado.');

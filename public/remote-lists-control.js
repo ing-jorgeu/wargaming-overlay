@@ -12,7 +12,7 @@
    const row=el('div'),label=side==='blue'?'azul':'rojo',link=el('a','Enlace del jugador '+label);link.href=state.links[side];link.target='_blank';link.rel='noopener';row.append(link);
    const copy=el('button','Copiar enlace');copy.type='button';copy.onclick=()=>navigator.clipboard.writeText(state.links[side]).catch(()=>{status.textContent='Copia este enlace: '+state.links[side];});row.append(copy);
    const open=state.status?.[side]?.open===true,gate=el('button',(open?'Deshabilitar':'Habilitar')+' subida '+label);gate.type='button';gate.onclick=()=>act(()=>request('/gate',{side,open:!open}));row.append(gate);
-   root.append(row);
+   if(state.warnings?.[side]?.length){const warnings=el('ul');for(const warning of state.warnings[side])warnings.append(el('li',warning));row.append(warnings);}root.append(row);
   }
   const sync=el('button','Sincronizar listas');sync.type='button';sync.onclick=()=>act(async()=>{if(window.remoteRostersBusy?.())throw Error('Espera a que se guarden los cambios manuales antes de sincronizar.');const next=await request('/sync',{});window.dispatchEvent(new Event('remote-list-applied'));const status=await request('/status');return {...next,status:status.status};});root.append(sync);
   status.textContent=state.synced?(state.synced.length?'Listas actualizadas: '+state.synced.map(s=>s==='blue'?'azul':'rojo').join(' y ')+'.':'Las listas ya están actualizadas.') : state.status?'Azul: '+(state.status.blue.open?'abierto':'cerrado')+' · Rojo: '+(state.status.red.open?'abierto':'cerrado'):'Pulsa Sincronizar para actualizar las listas en el overlay.';
