@@ -22,7 +22,8 @@ function validateUnits(input){
   if(!Array.isArray(u.characters)||u.characters.length>8)throw Error('Cada unidad admite hasta 8 personajes.');
   if(typeof u.deepStrike!=='boolean'||typeof u.destroyed!=='boolean')throw Error('En reservas y destruida deben ser true o false.');
   if(u.battleshocked!==undefined&&typeof u.battleshocked!=='boolean')throw Error('Battleshocked debe ser true o false.');
-  return {id,name:text(u.name,100,'Unidad',true),enhancement:text(u.enhancement??'',100,'Mejora'),characters:u.characters.map(c=>text(c,80,'Personaje',true)),notes:text(u.notes??'',160,'Notas'),deepStrike:u.deepStrike,destroyed:u.destroyed,battleshocked:u.battleshocked===true};
+  if(u.category!==undefined&&!['epic_character','character','unit','vehicle','monster'].includes(u.category))throw Error('Categoría de unidad inválida.');
+  return {...(u.category?{category:u.category}:{}),id,name:text(u.name,100,'Unidad',true),enhancement:text(u.enhancement??'',100,'Mejora'),characters:u.characters.map(c=>text(c,80,'Personaje',true)),notes:text(u.notes??'',160,'Notas'),deepStrike:u.deepStrike,destroyed:u.destroyed,battleshocked:u.battleshocked===true};
  });
 }
 function validateBackground(value=''){

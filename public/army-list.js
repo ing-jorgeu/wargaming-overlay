@@ -34,14 +34,26 @@
  document.addEventListener('click',e=>{if(menu&&!menu.contains(e.target))closeMenu();});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
  function fit(){
-  const root=$('#army-units');
-  // Multicolumn flow retains order; reduce typography only as needed to fit all content.
-  let best={font:0,columns:2};
-  for(const columns of [2,3]){
-   root.style.columnCount=columns;
-   for(let font=28;font>=4;font--){root.style.fontSize=font+'px';if(root.scrollWidth<=root.clientWidth+1&&root.scrollHeight<=root.clientHeight+1&&[...root.querySelectorAll('.army-group')].every(group=>group.getClientRects().length===1)){if(font>best.font)best={font,columns};break;}}
+  const root=$('#army-units'),groups=[...root.querySelectorAll('.army-group')];
+  if(!groups.length)return;
+  const height=root.clientHeight,padding=parseFloat(getComputedStyle(root).paddingTop)||0,gap=32;
+  root.style.columnCount='auto';root.style.position='relative';
+  function pack(columns,font){
+   root.style.fontSize=font+'px';const width=(root.clientWidth-gap*(columns-1))/columns;
+   let column=0,y=padding;const positions=[];
+   for(const group of groups){
+    group.style.position='absolute';group.style.width=width+'px';
+    const cardHeight=group.offsetHeight,margin=parseFloat(getComputedStyle(group).marginBottom)||0;
+    if(y+cardHeight>height+1&&y>padding){column++;y=padding;}
+    if(column>=columns||y+cardHeight>height+1)return null;
+    positions.push({group,x:column*(width+gap),y});y+=cardHeight+margin;
+   }
+   return positions;
   }
-  root.style.columnCount=best.columns;root.style.fontSize=(best.font||4)+'px';
+  let best={font:0,columns:2};
+  for(const columns of [2,3])for(let font=28;font>=4;font--)if(pack(columns,font)){if(font>best.font)best={font,columns};break;}
+  const positions=pack(best.columns,best.font||4);
+  if(positions)for(const {group,x,y} of positions){group.style.left=x+'px';group.style.top=y+'px';}
  }
  function render(){
   if(!snapshot)return;
@@ -57,7 +69,7 @@
   stage.style.setProperty('--accent',side==='left'?'#6aabfa':'#ed8c8a');
   $('#army-name').textContent=p.name;$('#army-name').style.fontSize=p.name.length>45?'36px':p.name.length>28?'48px':'62px';$('#army-faction').textContent=p.faction;$('#army-detachments').textContent=(p.detachments||[]).join(' · ');
   $('#army-count').textContent=`${units.filter(u=>!u.destroyed).length} / ${units.length} unidades`;
-  for(const group of RosterView.groupUnits(units)){
+  for(const group of RosterView.groupUnits(RosterView.sortUnits(units))){
    const block=el('section',null,'army-group'),heading=el('h2',group.name+(group.units.length>1?' ×'+group.units.length:''),'group-name');
    const hasLeaders=group.units.some(u=>u.characters.length);
    if(group.units.every(u=>u.destroyed))heading.classList.add('all-destroyed');if(!hasLeaders&&group.units.length>1){block.append(heading);editable(heading,p.rosterId,group.units);}

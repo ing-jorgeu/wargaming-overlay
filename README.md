@@ -379,7 +379,7 @@ Instala las dependencias con `npm ci` (o `npm install` si actualizas dependencia
 | `npm run prepublishOnly` | Ejecuta las pruebas previas a publicar; npm lo invoca automáticamente en `npm publish`. |
 | `npm pack --dry-run` | Revisa los archivos que incluirá el paquete sin publicarlo. |
 
-Para instalar o actualizar el comando global: `npm install -g @ing.jorgeu/wargaming-overlay`. Para una versión concreta: `npm install -g @ing.jorgeu/wargaming-overlay@3.0.0`. Usa `wargaming-overlay --version` para comprobar qué instalación ejecuta tu terminal.
+Para instalar o actualizar el comando global: `npm install -g @ing.jorgeu/wargaming-overlay`. Para una versión concreta: `npm install -g @ing.jorgeu/wargaming-overlay@3.1.0`. Usa `wargaming-overlay --version` para comprobar qué instalación ejecuta tu terminal.
 
 ### Activar y desactivar la voz de YouTube
 
@@ -1031,3 +1031,13 @@ La extracción inicial conserva el equipo declarado internamente en `wargear`, p
 Solo las fichas con opciones pasan a la comparación de elecciones. Si falta una ficha, caduca y no se puede renovar, o falta un resultado de comparación, las notas permanecen vacías y aparece un aviso en el manager al sincronizar. No se usa el listado completo de armas como respaldo. Las listas ya confirmadas no se reescriben: después de desplegar el backend actualizado, habilita la subida y vuelve a subir y sincronizar la lista.
 
 Las apariciones repetidas de la misma arma se suman antes de comparar las elecciones (dos líneas `1x Heavy reaper autocannon` se convierten en `2× Heavy reaper autocannon`). Las cantidades del resumen se contrastan con ese inventario; los calificadores de miniatura se mantienen separados. La comparación recibe también el texto original para comprobar la extracción y debe incluir las armas predeterminadas reemplazables, no solo las sustituciones.
+
+La pantalla de listas llena las columnas de arriba abajo, empezando por la izquierda; pasa a la siguiente cuando ya no cabe otra tarjeta completa. Mantiene cada grupo unido y ajusta la tipografía para mostrar la lista completa.
+
+El orden visual predeterminado es: personajes épicos, personajes, unidades lideradas, unidades restantes y, al final, vehículos y monstruos. Dentro de cada categoría se conserva el orden original. Las unidades con líderes o apoyos asignados se muestran como grupo liderado. El importador genera `category` (`epic_character`, `character`, `unit`, `vehicle`, `monster`) y el manager permite cambiarla en **Tipo de unidad**. Las listas antiguas sin categoría se consideran unidades normales: vuelve a subirlas para clasificarlas automáticamente o asigna el tipo en el editor. El orden guardado del JSON no cambia.
+
+### Cambios de la versión 3.1.0
+
+Listas remotas opcionales con subida en un paso, sincronización directa, facción y destacamentos automáticos, agrupación de líderes y apoyos, referencias de 11.ª con caché de siete días y notas limitadas a elecciones de equipo. Conserva cantidades repetidas, omite equipo obligatorio o sin verificar y controla el consumo del backend. Las listas se distribuyen llenando primero la izquierda y se ordenan por personajes épicos, personajes, unidades lideradas, otras unidades y vehículos/monstruos. Incluye edición de estados desde el overlay.
+
+En Railway configura `ONNXRUNTIME_NODE_INSTALL=skip` para evitar descargar componentes GPU del TTS que el backend de listas no utiliza.

@@ -36,3 +36,9 @@ test('overlay status edits preserve list content and other units while allowing 
  assert.equal(updateUnitStatus(next,'a',{battleshocked:false}).units[0].battleshocked,false);
  for(const bad of [{},{name:'different'},{destroyed:'true'},[]])assert.throws(()=>updateUnitStatus(roster,'a',bad));assert.throws(()=>updateUnitStatus(roster,'missing',{destroyed:true}));
 });
+
+test('default display order prioritizes epic characters, characters, led units and leaves vehicles last',()=>{
+ const {sortUnits}=require('../public/roster-view');const units=[{name:'Tank',category:'vehicle',characters:[]},{name:'Troops',characters:[]},{name:'Captain',category:'character',characters:[]},{name:'Mortarion',category:'epic_character',characters:[]},{name:'Led squad',category:'unit',characters:['Leader','Support']},{name:'Monster',category:'monster',characters:[]},{name:'Second captain',category:'character',characters:[]}];
+ assert.deepEqual(sortUnits(units).map(u=>u.name),['Mortarion','Captain','Second captain','Led squad','Troops','Tank','Monster']);assert.equal(units[0].name,'Tank');
+ const valid={name:'Mortarion',category:'epic_character',characters:[],deepStrike:false,destroyed:false};assert.equal(validateUnits([valid])[0].category,'epic_character');assert.throws(()=>validateUnits([{...valid,category:'invalid'}]));
+});
