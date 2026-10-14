@@ -32,17 +32,17 @@ function createLocalRemote({enabled,dataDir,env=process.env,getSnapshot,applyRos
      if(JSON.stringify(getSnapshot())!==revisions)return reply(409,{error:'La lista local cambió durante la sincronización. Vuelve a sincronizar.'});
      const changes=[];
      for(const [side,localSide] of [['blue','left'],['red','right']]){
-      const list=status[side]?.confirmed;if(!list)continue;const player=before.players[localSide],old=before.rosters[player.rosterId];
+      const list=status[side]?.confirmed;if(!list)continue;const player=Object.entries(before.players).find(([position,p])=>(p.team||(position==='left'?'blue':'red'))===side)?.[1],old=before.rosters[player.rosterId];
       if(old?.remoteImportId===list.id)continue;
       if(typeof list.id!=='string'||list.id.length>80)throw Error('Lista remota inválida.');
-      const clean=cleanList(list);changes.push({side,id:player.rosterId,roster:{revision:(old?.revision||0)+1,name:clean.name,units:clean.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:list.id},metadata:{faction:clean.armyFaction,detachments:clean.detachments}});
+      const clean=cleanList(list);changes.push({side,id:player.rosterId,roster:{revision:(old?.revision||0)+1,name:clean.name,units:clean.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:list.id},metadata:{playerName:clean.playerName,formation:clean.formation,faction:clean.armyFaction,detachments:clean.detachments}});
      }
      for(const change of changes)applyRoster(change.id,change.roster,change.metadata);
      pending={};write(pendingFile,pending);return reply(200,{...view(),synced:changes.map(c=>c.side),warnings:Object.fromEntries(['blue','red'].map(side=>[side,status[side]?.confirmed?.warnings||[]]))});
     }
     if(url.pathname==='/remote-lists/apply'){
      const p=pending[input.side];if(!['blue','red'].includes(input.side)||!p)throw Error('No hay lista pendiente para ese lado.');
-     const snapshot=getSnapshot(),localSide=input.side==='blue'?'left':'right',player=snapshot.players[localSide],old=snapshot.rosters[p.rosterId];
+     const snapshot=getSnapshot(),localSide=input.side==='blue'?'left':'right',player=Object.entries(snapshot.players).find(([position,p])=>(p.team||(position==='left'?'blue':'red'))===input.side)?.[1],old=snapshot.rosters[p.rosterId];
      if(player.rosterId!==p.rosterId||(old?.revision||0)!==p.revision)return reply(409,{error:'La lista local o los jugadores cambiaron. Guarda tus cambios y vuelve a sincronizar.'});
      applyRoster(p.rosterId,{revision:p.revision+1,name:p.list.name,units:p.list.units,backgroundUrl:old?.backgroundUrl||'',remoteImportId:p.list.id});delete pending[input.side];write(pendingFile,pending);return reply(200,view());
     }

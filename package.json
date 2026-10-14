@@ -1,6 +1,6 @@
 {
   "name": "@ing.jorgeu/wargaming-overlay",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
     "wargaming-overlay": "cli.js",
@@ -14,7 +14,10 @@
     "test-tts": "node scripts/tts-demo.js",
     "setup-tts": "node scripts/setup-kokoro.js",
     "start:remote-lists": "node remote-lists/start.js",
-    "dev:remote-lists": "node --env-file=.env.dev remote-lists/dev.js"
+    "dev:remote-lists": "node --env-file=.env.dev remote-lists/dev.js",
+    "desktop:start": "npm --prefix desktop start",
+    "desktop:package": "npm --prefix desktop run package",
+    "desktop:make": "npm --prefix desktop run make"
   },
   "engines": {
     "node": ">=22"

@@ -36,14 +36,14 @@ test('control distinguishes player order from unknown active turn',()=>{
 });
 
 test('turn color follows the active player across swaps, including app aliases',()=>{
- const layout={left:{name:'Display A',appName:'Pedro',color:'#7d1520'},right:{name:'Display B',appName:'John',color:'#245eb8'}};
+ const layout={left:{name:'Display A',appName:'Pedro',team:'blue',color:'#7d1520'},right:{name:'Display B',appName:'John',team:'red',color:'#245eb8'}};
  const game={round:1,half:'top',players:[{name:'Pedro'},{name:'John'}],turn:{firstPlayer:'Pedro',orderSource:'ui-order'}};
  assert.equal(roundLabel(layout,game,true),'RONDA 1 · TOP · AZUL');
  const swapped=swapPlayers(layout);
- assert.equal(roundLabel(swapped,game,true),'RONDA 1 · TOP · ROJO');
+ assert.equal(roundLabel(swapped,game,true),'RONDA 1 · TOP · AZUL');
  game.half='bottom';
  assert.equal(roundLabel(layout,game,true),'RONDA 1 · BOTTOM · ROJO');
- assert.equal(roundLabel(swapped,game,true),'RONDA 1 · BOTTOM · AZUL');
- assert.equal(require('../public/match-view').turnStatus(game,swapped).label,'RONDA 1 · BOTTOM · AZUL');
+ assert.equal(roundLabel(swapped,game,true),'RONDA 1 · BOTTOM · ROJO');
+ assert.equal(require('../public/match-view').turnStatus(game,swapped).label,'RONDA 1 · BOTTOM · ROJO');
  assert.equal(roundLabel({left:{name:'Pedro'},right:{name:'Pedro'}},{...game,half:'top'},true),'RONDA 1 · TOP');
 });

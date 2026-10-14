@@ -4,7 +4,7 @@ test('player identity survives edits, restarts, swaps and identical display name
  let s=linkPlayers({left:{name:'A'},right:{name:'B'}});assert.notEqual(s.left.rosterId,s.right.rosterId);
  const restarted=linkPlayers(JSON.parse(JSON.stringify(s)),s);assert.deepEqual(restarted,s);
  const swapped=linkPlayers({left:{...s.right,name:'New B'},right:{...s.left,name:'New A'}},s);
- assert.equal(swapped.left.rosterId,s.right.rosterId);
+ assert.equal(swapped.left.rosterId,s.right.rosterId);assert.equal(swapped.left.team,'red');assert.equal(swapped.right.team,'blue');
  assert.equal(linkPlayers({left:{...swapped.left,name:'Same'},right:{...swapped.right,name:'Same'}},swapped).right.rosterId,s.left.rosterId);
 });
 test('roster validation bounds input, rejects duplicate IDs and keeps order and multiple characters',()=>{

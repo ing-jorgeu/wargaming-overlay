@@ -8,7 +8,7 @@ function linkPlayers(next,previous={}){
   if(!id)id=known.find(p=>(p.appName||p.name)===(player.appName||player.name))?.rosterId;
   if(!id)id=previous[side]?.rosterId;
   if(!id||used.has(id))id=randomUUID();
-  used.add(id);result[side]={...player,rosterId:id};
+  used.add(id);result[side]={...player,rosterId:id,team:known.find(p=>p.rosterId===id)?.team||player.team||(side==='left'?'blue':'red')};
  }
  return result;
 }

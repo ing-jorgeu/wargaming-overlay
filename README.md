@@ -1047,3 +1047,52 @@ Los bloques explícitos `Attached unit N` con `Attached as: Leader`, `Support` y
 Si una importación devuelve 502, los logs del backend incluyen `list_import_failed` con `phase`, `reason` y, para fallos HTTP del proveedor, `upstreamStatus`; no incluyen la lista, claves ni el contenido de la respuesta del modelo. `output_limit` indica que la respuesta excedió `REMOTE_LISTS_MAX_OUTPUT_TOKENS`; `grouping` indica una asignación inválida y `comparison` un fallo al resumir equipo.
 
 Cuando la ficha descargada incluye keywords identificables, su categoría prevalece sobre la propuesta del LLM: EPIC HERO, después CHARACTER, después VEHICLE/MONSTER. Los grupos liderados conservan su posición después de los personajes independientes.
+
+## Aplicación de escritorio (macOS)
+
+El subproyecto `desktop/` ofrece un lanzador gráfico independiente de la CLI. Guarda puerto, intervalo, dispositivo, rutas, opciones de listas remotas y TTS; permite iniciar/detener, consultar teléfonos, conectar por Wi-Fi, comprobar la conexión, probar voz, autorizar YouTube y abrir el panel. Impide dos instancias de la app y rechaza puertos ocupados. Al cerrar la ventana detiene el servidor que inició; no detiene servidores de la CLI.
+
+La distribución inicial es para macOS Apple Silicon. Incluye Electron/Node, Python portátil y Android Platform-Tools: no requiere instalar Node, Python ni ADB. Descomprime el ZIP y arrastra **Wargaming Overlay.app** a Aplicaciones. En las opciones avanzadas puedes elegir otras rutas. Los datos del overlay permanecen en su carpeta habitual; el lanzador guarda sus opciones por separado y cifra la credencial del manager con el almacenamiento seguro del sistema. La depuración USB/inalámbrica y la autorización del teléfono siguen siendo necesarias. Para Wi-Fi utiliza la dirección de depuración ya autorizada por ADB; el botón no sustituye el emparejamiento inicial de Android.
+
+1. Abre la app, conecta y autoriza el teléfono.
+2. Selecciona el dispositivo o deja selección automática; pulsa **Comprobar conexión**.
+3. Activa las funciones opcionales que utilices y pulsa **Iniciar servidor**.
+4. Pulsa **Abrir panel**. Las fuentes OBS siguen usando las mismas URLs locales.
+5. Pulsa **Detener** al finalizar. La configuración se conserva para la siguiente sesión.
+
+La app inicial se genera sin certificado de firma/notarización para distribución pública. Windows y Linux tienen base de interfaz y ZIP configurados, pero aún no se han generado ni probado sus instaladores/runtimes. El comando npm continúa disponible sin Electron como dependencia del paquete CLI.
+
+### Construir desde el repositorio
+
+Con Node 22+ y macOS:
+
+```sh
+npm ci
+node desktop/scripts/prepare-package.js
+npm --prefix desktop run prepare:runtimes
+npm run desktop:make
+```
+
+Los scripts previos al empaquetado regeneran el runtime desde `npm pack`, usando únicamente los archivos públicos del paquete. `desktop/out/` contiene la app y el ZIP. `desktop/runtimes/` contiene Python y ADB descargados para la arquitectura de la máquina y un manifiesto de procedencia/checksums; no se versiona. Python proviene de python-build-standalone de Astral y ADB de Google. Los runtimes conservan sus avisos/licencias. Para un DMG, en un entorno que permita montar imágenes: `npm --prefix desktop run make:dmg`. Para desarrollo: `npm run desktop:start` después de preparar el runtime (`npm --prefix desktop run prepare:runtime`) y los runtimes externos.
+
+Las pruebas del lanzador cubren validación de opciones, puerto ocupado, argumentos sin shell, opciones desactivadas, doble inicio y parada. La validación de distribución debe incluir también arrancar la app empaquetada y comprobar su servidor HTTP. Puedes aislar la configuración del lanzador para pruebas con `OVERLAY_LAUNCHER_USER_DATA_DIR`; configura además una carpeta de datos y puerto separados antes de iniciar el servidor.
+
+### Actualizar estadísticas y opciones desde la app
+
+El botón **Actualizar datos de ListHammer** descarga una copia completa y confirma el período y número de facciones. Funciona con el servidor detenido o activo; cuando está activo actualiza también su caché sin reiniciarlo. Si falla, se conserva la copia anterior.
+
+**Guardar opciones** guarda la configuración para el próximo inicio; no cambia el servidor que está ejecutándose. Detén e inicia el servidor para aplicar cambios de voz o conexión. Las listas y datos persistidos se conservan; las conexiones y mensajes pendientes de TTS se interrumpen durante el reinicio.
+
+En macOS Kokoro reproduce mediante `afplay`, incluido en el sistema, usando la salida predeterminada. La prueba muestra el error y el respaldo utilizado si Kokoro falla, incluso cuando `say` completa la lectura.
+
+Si Kokoro falla después de iniciar la reproducción, informa del error y no repite todo el mensaje con `say`; el respaldo se usa para fallos anteriores a la reproducción.
+
+### Panel por jugador y posición
+
+El panel tiene las pestañas **Partida**, **Jugador Azul** y **Jugador Rojo**. Cada jugador reúne su nombre, alias de Tabletop Battles, facción, disposición, destacamentos y lista. Guarda sus datos con **Guardar datos del jugador**; la lista mantiene el guardado automático.
+
+En Partida se indica quién ocupa izquierda y derecha. **Intercambiar posiciones** mueve ambos jugadores conservando sus colores, listas y marcadores. Los enlaces `army-list.html?side=blue` y `side=red`, y las subidas remotas, siguen al color aunque cambie de lado. **Abrir overlay principal** abre una pestaña nueva.
+
+El botón amarillo **Abrir overlay principal** está en la cabecera. Las pestañas de jugadores usan sus nombres y colores; Partida muestra una tarjeta por posición.
+
+La página pública pide **Tu nombre** además de la lista. Al sincronizar se actualizan tanto el nombre visible como el nombre en Tabletop Battles con ese mismo valor, junto a facción, destacamentos y disposición declarada. Si la lista no contiene disposición, se conserva la actual. Los nombres de lista y jugador son campos distintos. Para habilitar este formulario hay que desplegar también la nueva versión del backend remoto (no basta con actualizar la app local).

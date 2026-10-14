@@ -1,5 +1,6 @@
 (function (root) {
   const normalize = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  function teamOf(player,side){return player?.team|| (side==='left'?'blue':'red');}
   function swapPlayers(layout) {
     const next = structuredClone(layout);
     [next.left, next.right] = [next.right, next.left];
@@ -22,7 +23,7 @@
     const active=half && first ? game?.players?.find(p=>game.half==='top' ? p.name===first : p.name!==first) : null;
     const matches=matchPlayers(layout,game);
     const side=active ? matches.indexOf(active) : -1;
-    const color=side===0?'AZUL':side===1?'ROJO':null;
+    const color=side<0?null:teamOf(layout[['left','right'][side]],['left','right'][side])==='blue'?'AZUL':'ROJO';
     return `RONDA ${round}${half ? ` · ${half}` : ''}${color ? ` · ${color}` : ''}`;
   }
   function turnStatus(game, layout={}) {
@@ -31,7 +32,7 @@
     const second=first ? game.players?.find(p=>p.name!==first)?.name : null;
     return {label,order:first && second ? `TOP: ${first} · BOTTOM: ${second}` : 'Orden de jugadores pendiente de lectura',reason:game?.turn?.reason || 'Esperando nuevas secundarias en Tabletop Battles.'};
   }
-  const api = {swapPlayers, matchPlayers, roundLabel, turnStatus};
+  const api = {teamOf,swapPlayers, matchPlayers, roundLabel, turnStatus};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MatchView = api;
 })(globalThis);

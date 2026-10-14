@@ -89,12 +89,15 @@ async function readToastBody(req,limit=8192) {
 }
 
 const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./remote-lists/local').createLocalRemote({enabled:true,dataDir,getSnapshot:rosterSnapshot,applyRoster:(id,roster,metadata)=>{
- const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;if(metadata){for(const side of ['left','right'])if(state[side].rosterId===id)state[side]={...state[side],...(metadata.faction?{faction:metadata.faction}:{}),...(metadata.detachments.length?{detachments:metadata.detachments}:{})};saveState();broadcast();}else broadcastRosters();
+ const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;if(metadata){for(const side of ['left','right'])if(state[side].rosterId===id)state[side]={...state[side],...(metadata.playerName?{name:metadata.playerName,appName:metadata.playerName}:{}),...(metadata.formation?{formation:metadata.formation}:{}),...(metadata.faction?{faction:metadata.faction}:{}),...(metadata.detachments.length?{detachments:metadata.detachments}:{})};saveState();broadcast();}else broadcastRosters();
 }}):null;
+let statsSyncTask=null;
+function refreshStats(){if(!statsSyncTask)statsSyncTask=syncStats(dataDir).then(stats=>{statsCache=stats;announcements.refresh();return stats;}).finally(()=>{statsSyncTask=null;});return statsSyncTask;}
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control','no-store');
   const url = new URL(req.url, 'http://localhost');
   if(url.pathname==='/remote-lists'||url.pathname.startsWith('/remote-lists/')){if(remoteLists)return remoteLists.handle(req,res,url);return send(res,url.pathname==='/remote-lists'&&req.method==='GET'?200:404,'application/json',JSON.stringify({enabled:false}));}
+  if(url.pathname==='/listhammer/sync'&&req.method==='POST'){try{const stats=await refreshStats();return send(res,200,'application/json',JSON.stringify({factions:stats.factions.length,period:stats.selection.period}));}catch(e){return send(res,502,'application/json',JSON.stringify({error:e.message}));}}
   if(url.pathname==='/rosters/events' && req.method==='GET'){
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache',Connection:'keep-alive'});
     rosterListeners.add(res);res.write(`data: ${JSON.stringify(rosterSnapshot())}\n\n`);
@@ -165,4 +168,4 @@ const server = http.createServer(async (req, res) => {
   send(res, 200, types[path.extname(filePath)] || 'application/octet-stream', fs.readFileSync(filePath));
 });
 server.on('error', e => { console.error(e.code==='EADDRINUSE' ? 'El puerto está ocupado. Detén el otro servidor o usa --port 8766.' : 'No se pudo iniciar: '+e.message); reader?.kill(); process.exitCode=1; });
-server.listen(Number(process.env.PORT || 8765), '127.0.0.1', () => { startReader(); youtube=require('./youtube').startYouTube(dataDir); syncStats(dataDir).then(stats => { statsCache = stats; announcements.refresh(); }).catch(e => console.error('Listhammer: ' + e.message + ' Se conserva la última copia completa, si existe. El overlay sigue funcionando; se reintentará en el próximo inicio.')); console.log(`Panel: http://127.0.0.1:${process.env.PORT || 8765}\nOBS: http://127.0.0.1:${process.env.PORT || 8765}/overlay-art.html\nDatos: ${dataDir}\nCtrl+C para detener.`); });
+server.listen(Number(process.env.PORT || 8765), '127.0.0.1', () => { startReader(); youtube=require('./youtube').startYouTube(dataDir); refreshStats().catch(e => console.error('Listhammer: ' + e.message + ' Se conserva la última copia completa, si existe. El overlay sigue funcionando; se reintentará en el próximo inicio.')); console.log(`Panel: http://127.0.0.1:${process.env.PORT || 8765}\nOBS: http://127.0.0.1:${process.env.PORT || 8765}/overlay-art.html\nDatos: ${dataDir}\nCtrl+C para detener.`); });

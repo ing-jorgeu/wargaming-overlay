@@ -86,3 +86,19 @@ test('explicitly disabled TTS does not start YouTube or validate a voice provide
  assert.ok(logs.some(s=>s.includes('desactivado en configuración')));
  assert.equal(require('../package.json').scripts.postinstall,undefined);
 });
+
+test('macOS playback waits for afplay and propagates audio errors',async()=>{
+ const {playMacOS}=require('../tts/macos-playback');let child,file;
+ const promise=playMacOS(new Float32Array([0,.2,0]),24000,{spawnImpl:(command,args,opts)=>{
+  assert.equal(command,'/usr/bin/afplay');assert.equal(opts.shell,false);file=args[0];
+  child=new EventEmitter();child.stderr=new PassThrough();return child;
+ }});
+ while(!child)await new Promise(r=>setTimeout(r,5));
+ child.stderr.write('device unavailable');child.emit('close',1);
+ await assert.rejects(promise,/device unavailable/);assert.equal(require('node:fs').existsSync(file),false);
+});
+test('a playback failure never repeats a partially spoken message through say',async()=>{
+ const calls=[];const spawnImpl=processMock(({child,cmd})=>{calls.push(cmd);queueMicrotask(()=>{child.stderr.write('[Kokoro] Reproduciendo audio.\n[Kokoro] device lost');child.emit('close',1);});});
+ await assert.rejects(createSpeech({}, {env:{},platform:'darwin',spawnImpl,log:()=>{}})('Hola'),/device lost/);
+ assert.deepEqual(calls,[process.execPath]);
+});

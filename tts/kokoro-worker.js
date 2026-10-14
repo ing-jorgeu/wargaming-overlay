@@ -8,6 +8,7 @@ process.stdin.on('end',async()=>{
   const {text,voice,speed,cacheDir}=JSON.parse(input);const start=performance.now();
   const {samples,sampleRate}=await generate(text,{voice,speed,cacheDir,log:message=>console.error(message)});
   console.error(`[Kokoro] Audio generado en ${((performance.now()-start)/1000).toFixed(2)} s.`);
-  if(process.platform==='win32')await require('./windows-playback').playWindows(samples,sampleRate);else await play(samples,sampleRate);process.exit(0);
+  console.error('[Kokoro] Reproduciendo audio.');
+  if(process.platform==='win32')await require('./windows-playback').playWindows(samples,sampleRate);else if(process.platform==='darwin')await require('./macos-playback').playMacOS(samples,sampleRate);else await play(samples,sampleRate);process.exit(0);
  }catch(e){console.error('[Kokoro] '+e.message);process.exit(1);}
 });

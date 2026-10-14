@@ -52,7 +52,7 @@ test('HTTP and SSE keep working when optional YouTube authentication fails', {ti
   await layoutReader.read();
   const layout={title:'Mesa 1',roundHalf:'bottom',left:{name:'Ana',appName:'alpha',faction:'Orks',formation:'Take and Hold',detachments:['Uno','Dos']},right:{name:'Luis',appName:'beta',faction:'Necrons',formation:'Reconnaissance',detachments:['Tres']}};
   const initialLayout=await (await fetch(base+'/state')).json();
-  layout.left.rosterId=initialLayout.left.rosterId;layout.right.rosterId=initialLayout.right.rosterId;
+  layout.left.rosterId=initialLayout.left.rosterId;layout.right.rosterId=initialLayout.right.rosterId;layout.left.team=initialLayout.left.team;layout.right.team=initialLayout.right.team;
   const swapped=require('../public/match-view').swapPlayers(layout);
   assert.equal((await post('/state',swapped)).status,200);
   const frame=Buffer.from((await layoutReader.read()).value).toString('utf8');

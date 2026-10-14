@@ -47,13 +47,14 @@ function kokoro(text,{spawnImpl=spawn,platform=process.platform,signal,timeoutMs
   const timer=setTimeout(()=>{timedOut=true;stop();},timeoutMs);
   const finish=error=>{if(done)return;done=true;clearTimeout(timer);signal?.removeEventListener('abort',stop);
    const cleanup=temporary?require('node:fs/promises').rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:100}).catch(()=>log('[TTS] No se pudo limpiar un archivo de audio temporal.')):Promise.resolve();
+   if(error)error.playbackStarted=stderr.includes('[Kokoro] Reproduciendo audio.');
    cleanup.then(()=>error?reject(error):resolve());
   };
   signal?.addEventListener('abort',stop,{once:true});
   let stderr='';child.stderr?.setEncoding('utf8');child.stderr?.on('data',chunk=>{stderr=(stderr+chunk).slice(-4000);});
   child.stdin.on('error',()=>{});
   child.once('error',()=>finish(Error('No se pudo iniciar Kokoro.')));
-  child.once('close',code=>{if(stderr.trim())log(stderr.trim());finish(signal?.aborted?null:timedOut?Error('Se agotó el tiempo de Kokoro.'):code===0?null:Error('Falló Kokoro o la salida de audio.'));});
+  child.once('close',(code,signalName)=>{if(stderr.trim())log(stderr.trim());finish(signal?.aborted?null:timedOut?Error('Se agotó el tiempo de Kokoro.'):code===0?null:Error('Kokoro terminó con '+(signalName?'señal '+signalName:'código '+code)+(stderr.trim()?': '+stderr.trim().slice(-1000):'.')));});
   child.stdin.end(JSON.stringify({text:String(text),voice:opts.voice,speed:opts.speed,cacheDir:opts.cacheDir}));
   if(signal?.aborted)stop();
  });
@@ -65,7 +66,7 @@ function createSpeech(config={}, {env=process.env,platform=process.platform,log=
   const common={...options,platform,spawnImpl,log};
   if(opts.provider==='say')return say(text,common);
   try{await kokoro(text,{...common,...opts});}
-  catch(e){if(options.signal?.aborted)return;if(opts.fallback!=='say')throw e;log('[TTS] Kokoro falló; leyendo este mensaje con say.');await say(text,common);}
+  catch(e){if(options.signal?.aborted)return;if(opts.fallback!=='say'||e.playbackStarted)throw e;log('[TTS] '+e.message+' Respaldo: leyendo este mensaje con say.');await say(text,common);}
  };
 }
 function speak(text,options={}){return createSpeech(options.config,{env:options.env,platform:options.platform,log:options.log,spawnImpl:options.spawnImpl})(text,options);}

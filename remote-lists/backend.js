@@ -46,6 +46,7 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     if(!isOpen(side))throw fail('La subida está deshabilitada. Pide al manager que la habilite.',403);
     const input=await readJSON(req);const slot=data[side];
     if(!isOpen(side))throw fail('La subida se cerró.',403);
+    if(typeof input.playerName!=='string'||!input.playerName.trim()||input.playerName.length>80||/[\x00-\x1f\x7f]/.test(input.playerName))throw fail('Indica tu nombre (1–80 caracteres).');
     if(typeof input.text!=='string'||!input.text.trim()||input.text.length>6000)throw fail('Pega una lista de 1 a 6000 caracteres.');
     if(busy.has(side))throw fail('Ya se está interpretando una lista de este lado.',409);
     if(slot.attempts>=maxImports)throw fail('Se agotaron los intentos. Pide al manager que vuelva a habilitar la subida.',429);
@@ -56,7 +57,8 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     try{
      let list;try{list=cleanList(await importer(input.text,{reserveTokens}));}catch(e){if(e.status)throw e;console.error(JSON.stringify({event:'list_import_failed',phase:e.importPhase||'validation',reason:['upstream_http','output_limit','incomplete_response'].includes(e.diagnostic)?e.diagnostic:'invalid_result',...(Number.isInteger(e.upstreamStatus)?{upstreamStatus:e.upstreamStatus}:{})}));throw fail('No se pudo interpretar la lista. Puedes reintentar si quedan intentos.',502);}
      if(!isOpen(side)||slot.generation!==generation)throw fail('El manager cerró o cambió la subida. No se guardó esta interpretación.',409);
-     slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
+     const formation=['Take and Hold','Purge the Foe','Disruption','Reconnaissance','Priority Assets'].find(f=>input.text.split(/\r?\n/).some(line=>line.trim().toLowerCase()===f.toLowerCase()));
+     slot.confirmed={...list,playerName:input.playerName.trim(),formation:formation||list.formation,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
     }finally{busy.delete(side);}
    }
    const staticFiles={'/blue':'player.html','/red':'player.html','/player.js':'player.js','/player.css':'player.css'};

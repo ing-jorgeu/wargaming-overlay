@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {createRemoteServer}=require('../remote-lists/backend');const {createLocalRemote}=require('../remote-lists/local');
 const token='test-manager-token-not-for-production';
 const list={name:'Ejército',units:[{name:'Rubric Marines',enhancement:'',characters:[],notes:''}],warnings:[]};
-async function fixture(t,opts={}){const dir=await fs.mkdtemp(path.join(os.tmpdir(),'remote-lists-'));let calls=0;const server=createRemoteServer({dataDir:dir,managerToken:token,importer:async()=>{calls++;return list;},...opts});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>server.close(r));await fs.rm(dir,{recursive:true,force:true});});const base='http://127.0.0.1:'+server.address().port;const request=async(route,body,auth=false)=>{const r=await fetch(base+route,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};return {dir,server,base,request,calls:()=>calls};}
+async function fixture(t,opts={}){const dir=await fs.mkdtemp(path.join(os.tmpdir(),'remote-lists-'));let calls=0;const server=createRemoteServer({dataDir:dir,managerToken:token,importer:async()=>{calls++;return list;},...opts});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>server.close(r));await fs.rm(dir,{recursive:true,force:true});});const base='http://127.0.0.1:'+server.address().port;const request=async(route,body,auth=false)=>{const r=await fetch(base+route,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(route.match(/^\/api\/(blue|red)\/import$/)?{playerName:'Jugador de prueba',...body}:body):undefined});return {status:r.status,data:await r.json()};};return {dir,server,base,request,calls:()=>calls};}
 test('closed gates never call LLM; manager auth, automatic saving and persistence',async t=>{
  const f=await fixture(t);assert.equal((await f.request('/api/blue/import',{text:'List'})).status,403);assert.equal(f.calls(),0);
  assert.equal((await f.request('/api/manager/blue/gate',{open:true})).status,401);
@@ -32,7 +32,7 @@ test('local feature disabled makes no outbound calls; synchronization applies li
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'local-remote-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));let snapshot={players:{left:{rosterId:'a'},right:{rosterId:'b'}},rosters:{a:{revision:2,name:'Local',units:[],backgroundUrl:'https://example.com/bg'}}};let applied=0;
  const client=createLocalRemote({enabled:true,dataDir:dir,env:{REMOTE_LISTS_URL:remote.base,REMOTE_LISTS_MANAGER_TOKEN:token},getSnapshot:()=>snapshot,applyRoster:(id,r,metadata)=>{snapshot.rosters[id]=r;Object.assign(snapshot.players.left,metadata);applied++;}});
  const local=http.createServer((req,res)=>client.handle(req,res,new URL(req.url,'http://local')));await new Promise(r=>local.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>local.close(r)));const base='http://127.0.0.1:'+local.address().port;
- const call=async(route,body)=>{const r=await fetch(base+'/remote-lists'+route,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
+ const call=async(route,body)=>{const r=await fetch(base+'/remote-lists'+route,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(route.match(/^\/api\/(blue|red)\/import$/)?{playerName:'Jugador de prueba',...body}:body):undefined});return {status:r.status,data:await r.json()};};
  assert.ok(!JSON.stringify((await call('')).data).includes(token));await call('/sync',{});assert.equal(applied,1);assert.equal(snapshot.rosters.a.name,'Remote');assert.equal(snapshot.players.left.faction,'Thousand Sons');assert.deepEqual(snapshot.players.left.detachments,['Cult of Magic']);assert.equal(snapshot.rosters.a.backgroundUrl,'https://example.com/bg');snapshot.rosters.a.units[0].destroyed=true;assert.deepEqual((await call('/sync',{})).data.synced,[]);assert.equal(applied,1);assert.equal(snapshot.rosters.a.units[0].destroyed,true);
  const disabled=createLocalRemote({enabled:false,dataDir:dir,env:{},fetchImpl:()=>{throw Error('must not connect');}});let value;await disabled.handle({method:'GET'},{writeHead(){},end(s){value=JSON.parse(s);}},{pathname:'/remote-lists'});assert.deepEqual(value,{enabled:false});
  const evil=await fetch(base+'/remote-lists/gate',{method:'POST',headers:{Origin:'https://evil.example','Content-Type':'application/json'},body:JSON.stringify({side:'red',open:true})});assert.equal(evil.status,403);
@@ -104,4 +104,13 @@ Mortarion (375 Points)`;
 test('incomplete LLM output records phase and output limit without disclosing response content',async()=>{
  const {createImporter}=require('../remote-lists/importer');const importer=createImporter({apiKey:'test',fetchImpl:async()=>({ok:true,json:async()=>({status:'incomplete',incomplete_details:{reason:'max_output_tokens'},output:[]})})});
  await assert.rejects(importer('Army'),e=>e.importPhase==='extraction'&&e.diagnostic==='output_limit');
+});
+
+test('upload validates player name before spending tokens and preserves formation and name for sync',async t=>{
+ const f=await fixture(t);await f.request('/api/manager/blue/gate',{open:true},true);
+ assert.equal((await f.request('/api/blue/import',{text:'Army',playerName:''})).status,400);assert.equal(f.calls(),0);
+ assert.equal((await f.request('/api/blue/import',{text:'Army\nReconnaissance\nStrike Force',playerName:'  Antonio Bello  '})).status,200);
+ const stored=(await f.request('/api/manager/status',null,true)).data.blue.confirmed;
+ assert.equal(stored.playerName,'Antonio Bello');assert.equal(stored.formation,'Reconnaissance');
+ const clean=require('../remote-lists/importer').cleanList(stored);assert.equal(clean.playerName,'Antonio Bello');assert.equal(clean.formation,'Reconnaissance');
 });

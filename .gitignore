@@ -9,3 +9,6 @@ youtube-tokens.json
 
 remote-lists-data/
 !.env.example
+
+desktop/out/
+desktop/runtimes/

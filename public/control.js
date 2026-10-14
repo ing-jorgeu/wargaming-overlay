@@ -5,7 +5,15 @@ const formations = ['Take and Hold', 'Purge the Foe', 'Disruption', 'Reconnaissa
 const escapeAttribute=value=>String(value??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function card(side, label, player) { const options = Object.entries(factions).map(([group, names]) => `<optgroup label="${group}">${names.map(name => `<option ${name === player.faction ? 'selected' : ''}>${name}</option>`).join('')}</optgroup>`).join(''); const formation = formations.includes(player.formation) ? player.formation : 'Take and Hold'; const detachments = Array.isArray(player.detachments) ? player.detachments : []; return `<fieldset><legend>${label}</legend><label>Nombre<input data-side="${side}" data-key="name" maxlength="80" value="${escapeAttribute(player.name)}"></label><label>Nombre en la app (opcional)<input data-side="${side}" data-key="appName" maxlength="80" value="${(player.appName || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')}"></label><label>Facción<select data-side="${side}" data-key="faction">${options}</select></label><label>Disposición<select data-side="${side}" data-key="formation">${formations.map(name => `<option ${name === formation ? 'selected' : ''}>${name}</option>`).join('')}</select></label><label>Destacamento 1 (opcional)<input data-side="${side}" data-detachment="0" maxlength="42" value="${escapeAttribute(detachments[0])}"></label><label>Destacamento 2 (opcional)<input data-side="${side}" data-detachment="1" maxlength="42" value="${escapeAttribute(detachments[1])}"></label><label>Destacamento 3 (opcional)<input data-side="${side}" data-detachment="2" maxlength="42" value="${escapeAttribute(detachments[2])}"></label><label>Color de fondo<input data-side="${side}" data-key="color" type="color" value="${player.color}"></label></fieldset>`; }
 function renderPlayers(){
- players.innerHTML=card('left','Jugador izquierda',state.left)+card('right','Jugador derecha',state.right);
+ for(const side of ['left','right']){const team=MatchView.teamOf(state[side],side);document.querySelector('#'+team+'-details').innerHTML=card(side,team==='blue'?'Jugador Azul':'Jugador Rojo',state[side]);}
+ const positions=document.querySelector('#player-positions');positions.replaceChildren();
+ for(const side of ['left','right']){
+  const p=state[side],team=MatchView.teamOf(p,side),label=team==='blue'?'Azul':'Rojo';
+  const box=document.createElement('article');box.className='position-card team-'+team;
+  const heading=document.createElement('span');heading.className='eyebrow';heading.textContent=(side==='left'?'Izquierda':'Derecha')+' · '+label;
+  const name=document.createElement('strong');name.textContent=p.name||'Jugador '+label;box.append(heading,name);positions.append(box);
+  const tab=document.querySelector('#tab-'+team);tab.textContent=p.name&&!/^PLAYER (ONE|TWO)$/i.test(p.name)?p.name:'Jugador '+label;tab.classList.add('team-tab','team-'+team);tab.setAttribute('aria-label',tab.textContent+' · Jugador '+label);
+ }
  document.querySelectorAll('input[type=color]').forEach(input=>input.closest('label').remove());
 }
 function readForm(){
@@ -26,6 +34,7 @@ async function saveLayout(swap=false){
   if(!response.ok)throw Error('No se pudo guardar');
   state=await fetch('/state').then(r=>r.json());renderPlayers();
   window.dispatchEvent(new Event('layout-saved'));
+  document.querySelector('#player-saved').textContent=swap?'Posiciones actualizadas.':'Datos del jugador guardados.';
   document.querySelector('#saved').textContent=swap?'Jugadores intercambiados. Overlay actualizado.':'Overlay actualizado.';
  }catch{
   document.querySelector('#saved').textContent='No se pudo confirmar el cambio. Comprueba la conexión con el servidor y recarga el panel antes de intentarlo de nuevo.';
@@ -56,6 +65,6 @@ function resolutionHelp(){const [w,h]=document.querySelector('#resolution-preset
 document.querySelector('#resolution-preset').addEventListener('change',resolutionHelp);resolutionHelp();
 
 window.addEventListener('remote-list-applied',async()=>{
- try{const next=await fetch('/state').then(r=>{if(!r.ok)throw Error();return r.json();});state=next;for(const side of ['left','right']){const faction=players.querySelector(`[data-side="${side}"][data-key="faction"]`);if(faction)faction.value=next[side].faction;players.querySelectorAll(`[data-side="${side}"][data-detachment]`).forEach(input=>input.value=next[side].detachments?.[Number(input.dataset.detachment)]||'');}}
- catch{document.querySelector('#saved').textContent='Recarga el panel para ver la facción y destacamentos sincronizados.';}
+ try{state=await fetch('/state').then(r=>{if(!r.ok)throw Error();return r.json();});renderPlayers();}
+ catch{document.querySelector('#player-saved').textContent='Recarga el panel para ver los datos sincronizados.';}
 });

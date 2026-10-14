@@ -2,8 +2,15 @@
  const $=s=>document.querySelector(s),root=$('#roster-editors'),feedback=$('#roster-feedback');
  const drafts=new Map();let snapshot,dragged=null;
  const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
- function tab(which){for(const name of ['match','rosters']){const selected=name===which;$('#'+name+'-panel').hidden=!selected;$('#tab-'+name).setAttribute('aria-pressed',String(selected));$('#tab-'+name).classList.toggle('secondary-button',!selected);}if(which==='rosters')load();}
- $('#tab-match').onclick=()=>tab('match');$('#tab-rosters').onclick=()=>tab('rosters');
+ let selectedTeam='blue';
+ function filterTeam(){document.querySelectorAll('[data-player-team]').forEach(n=>n.hidden=n.dataset.playerTeam!==selectedTeam);}
+ function tab(which){
+  if(which!=='match')selectedTeam=which;
+  $('#match-panel').hidden=which!=='match';$('#rosters-panel').hidden=which==='match';
+  for(const name of ['match','blue','red']){const selected=name===which;$('#tab-'+name).setAttribute('aria-pressed',String(selected));$('#tab-'+name).classList.toggle('secondary-button',!selected);}
+  filterTeam();window.dispatchEvent(new CustomEvent('player-tab',{detail:selectedTeam}));if(which!=='match')load();
+ }
+ for(const name of ['match','blue','red'])$('#tab-'+name).onclick=()=>tab(name);
  function dirty(){return [...drafts.values()].some(d=>d.dirty);}
  async function load(){
   if([...drafts.values()].some(d=>d.saving))return;
@@ -17,9 +24,9 @@
  function render(){
   root.replaceChildren();if(!snapshot)return;
   for(const [side,p] of Object.entries(snapshot.players)){
-   const d=drafts.get(p.rosterId),section=el('article',null,'roster-editor');section.dataset.roster=p.rosterId;
+   const d=drafts.get(p.rosterId),section=el('article',null,'roster-editor');section.dataset.roster=p.rosterId;section.dataset.playerTeam=MatchView.teamOf(p,side);
    section.append(el('h3',p.name||'Jugador'),el('p',[p.faction,...(p.detachments||[])].filter(Boolean).join(' · '),'roster-meta'));
-   const color=side==='left'?'blue':'red',url=location.origin+'/army-list.html?side='+color;
+   const color=MatchView.teamOf(p,side),url=location.origin+'/army-list.html?side='+color;
    const link=el('a','Abrir lista para OBS ↗');link.href=url;link.target='_blank';link.rel='noopener';section.append(link,el('code',url,'roster-url'),el('p','Fuente Navegador: 1920 × 1080. Toda la lista se muestra en una sola pantalla.'));
    section.append(button('Copiar URL '+(color==='blue'?'azul':'roja'),async()=>{try{await navigator.clipboard.writeText(url);feedback.textContent='URL copiada al portapapeles.';}catch{feedback.textContent='No se pudo copiar. Selecciona y copia la URL que aparece arriba.';}}));
    const toolbar=el('div',null,'roster-toolbar');
@@ -55,7 +62,7 @@
     const flags=el('div',null,'unit-flags');for(const [key,label] of [['deepStrike','En reservas'],['battleshocked','Battleshocked'],['destroyed','Unidad destruida']]){const l=el('label'),box=el('input');box.type='checkbox';box.checked=u[key];box.onchange=()=>{u[key]=box.checked;change();};l.append(box,document.createTextNode(label));flags.append(l);}row.append(flags);list.append(row);
    });
    if(!d.units.length)section.append(el('p','Todavía no hay unidades. Añade la primera o importa una lista.','roster-empty'));
-   section.append(list);root.append(section);
+   section.append(list);root.append(section);filterTeam();
   }
  }
  const sectionFor=id=>[...root.children].find(n=>n.dataset.roster===id);

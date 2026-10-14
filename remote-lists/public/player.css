@@ -5,3 +5,5 @@ html{color-scheme:dark}main{max-width:1120px}input,textarea{min-width:0;font-siz
 select{width:100%;font:inherit;font-size:16px;min-height:44px;padding:10px;border-radius:8px;box-sizing:border-box}
 
 .loading-spinner{display:inline-block;width:22px;height:22px;border:3px solid #354b67;border-top-color:#9bbfed;border-radius:50%;animation:loading-spin .8s linear infinite;vertical-align:middle;margin:8px 0}.loading-spinner:not([hidden])+#status{display:inline-block;margin-left:10px}@keyframes loading-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.loading-spinner{animation:none;border-top-color:#ecf1f8}}
+
+input[type=text]{display:block;width:100%;box-sizing:border-box;margin:8px 0 20px;padding:14px;border:1px solid #536171;border-radius:7px;background:#202936;color:#fff;font:inherit}

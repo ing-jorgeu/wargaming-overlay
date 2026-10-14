@@ -59,14 +59,14 @@
   if(!snapshot)return;
   closeMenu();
   const requestedSide=params.get('side')||'blue',resolvedSide=({blue:'left',red:'right'})[requestedSide]||requestedSide;
-  const entry=Object.entries(snapshot.players).find(([side,p])=>p.rosterId===id||(!id&&side===resolvedSide));
+  const entry=Object.entries(snapshot.players).find(([side,p])=>p.rosterId===id||(!id&&(['blue','red'].includes(requestedSide)?(p.team||(side==='left'?'blue':'red'))===requestedSide:side===resolvedSide)));
   const root=$('#army-units');root.replaceChildren();
   if(!entry){$('#army-name').textContent='Jugador no encontrado';$('#army-status').textContent='Copia la URL desde el administrador.';return;}
   const [side,p]=entry,roster=snapshot.rosters[p.rosterId]||{},units=roster.units||[];
   $('#army-list-name').textContent=roster.name||'ORDEN DE BATALLA';
   const background=$('#army-background');
   if(roster.backgroundUrl){if(background.getAttribute('src')!==roster.backgroundUrl)background.src=roster.backgroundUrl;background.hidden=false;}else{background.removeAttribute('src');background.hidden=true;}
-  stage.style.setProperty('--accent',side==='left'?'#6aabfa':'#ed8c8a');
+  stage.style.setProperty('--accent',(p.team||(side==='left'?'blue':'red'))==='blue'?'#6aabfa':'#ed8c8a');
   $('#army-name').textContent=p.name;$('#army-name').style.fontSize=p.name.length>45?'36px':p.name.length>28?'48px':'62px';$('#army-faction').textContent=p.faction;$('#army-detachments').textContent=(p.detachments||[]).join(' · ');
   $('#army-count').textContent=`${units.filter(u=>!u.destroyed).length} / ${units.length} unidades`;
   for(const group of RosterView.groupUnits(RosterView.sortUnits(units))){
