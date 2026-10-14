@@ -19,7 +19,7 @@ function createImporter({apiKey,model='gpt-6-luna',maxOutputTokens=4000,fetchImp
   }
   const raw=await call(extractionInstructions,text,schema,'army_list');phase='validation';const list=cleanList(raw);for(const unit of list.units)unit.notes='';
   phase='references';let found={references:[],warnings:['No hay referencias de 11.ª disponibles. No se mostrará equipo sin verificar.'],covered:new Set()};if(references)found=await references.lookup(raw.faction,raw.units);
-  list.warnings=[...found.warnings,...list.warnings];
+  list.warnings=[...found.warnings,...list.warnings];for(const reference of found.references)if(reference.sheet.category)for(const index of reference.indices)list.units[index].category=reference.sheet.category;
   const fixed=new Set(found.references.filter(r=>r.sheet.hasOptions===false).flatMap(r=>r.indices));const comparable=new Set([...found.covered].filter(i=>!fixed.has(i)));
   if(comparable.size){phase='comparison';
    const input=JSON.stringify({originalText:text,units:raw.units.map((u,index)=>({index,name:u.name,wargear:aggregateWargear(u.wargear||[]),notes:''})).filter(u=>comparable.has(u.index)),references:found.references.filter(r=>r.sheet.hasOptions!==false)});

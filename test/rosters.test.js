@@ -42,3 +42,9 @@ test('default display order prioritizes epic characters, characters, led units a
  assert.deepEqual(sortUnits(units).map(u=>u.name),['Mortarion','Captain','Second captain','Led squad','Troops','Tank','Monster']);assert.equal(units[0].name,'Tank');
  const valid={name:'Mortarion',category:'epic_character',characters:[],deepStrike:false,destroyed:false};assert.equal(validateUnits([valid])[0].category,'epic_character');assert.throws(()=>validateUnits([{...valid,category:'invalid'}]));
 });
+
+test('legacy Death Guard rosters without categories still follow the requested order',()=>{
+ const {sortUnits}=require('../public/roster-view');const units=[{name:'Blightlord Terminators',characters:['Lord of Virulence']},{name:'Plague Marines',characters:['Malignant Plaguecaster','Biologus Putrifier']},{name:'Daemon Prince of Nurgle',characters:[]},{name:'Mortarion',characters:[]},{name:'Tallyman',characters:[]},{name:'Typhus',characters:[]},{name:'Chaos Rhino',characters:[]},{name:'Defiler',characters:[]},{name:'Poxwalkers',characters:[]}];
+ assert.deepEqual(sortUnits(units).map(u=>u.name),['Mortarion','Typhus','Daemon Prince of Nurgle','Tallyman','Blightlord Terminators','Plague Marines','Poxwalkers','Chaos Rhino','Defiler']);
+ assert.equal(validateUnits([{name:'Mortarion',characters:[],deepStrike:false,destroyed:false}])[0].category,'epic_character');
+});

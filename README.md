@@ -1034,7 +1034,7 @@ Las apariciones repetidas de la misma arma se suman antes de comparar las elecci
 
 La pantalla de listas llena las columnas de arriba abajo, empezando por la izquierda; pasa a la siguiente cuando ya no cabe otra tarjeta completa. Mantiene cada grupo unido y ajusta la tipografía para mostrar la lista completa.
 
-El orden visual predeterminado es: personajes épicos, personajes, unidades lideradas, unidades restantes y, al final, vehículos y monstruos. Dentro de cada categoría se conserva el orden original. Las unidades con líderes o apoyos asignados se muestran como grupo liderado. El importador genera `category` (`epic_character`, `character`, `unit`, `vehicle`, `monster`) y el manager permite cambiarla en **Tipo de unidad**. Las listas antiguas sin categoría se consideran unidades normales: vuelve a subirlas para clasificarlas automáticamente o asigna el tipo en el editor. El orden guardado del JSON no cambia.
+El orden visual predeterminado es: personajes épicos, personajes, unidades lideradas, unidades restantes y, al final, vehículos y monstruos. Dentro de cada categoría se conserva el orden original. Las unidades con líderes o apoyos asignados se muestran como grupo liderado. El importador genera `category` (`epic_character`, `character`, `unit`, `vehicle`, `monster`) y el manager permite cambiarla en **Tipo de unidad**. Las listas antiguas sin categoría usan un catálogo de compatibilidad con nombres verificados de Death Guard y Adeptus Mechanicus; las unidades desconocidas se consideran normales hasta volver a importarlas o asignar su tipo en el editor. El orden guardado del JSON no cambia.
 
 ### Cambios de la versión 3.1.0
 
@@ -1045,3 +1045,5 @@ En Railway configura `ONNXRUNTIME_NODE_INSTALL=skip` para evitar descargar compo
 Los bloques explícitos `Attached unit N` con `Attached as: Leader`, `Support` y `Bodyguard` se contrastan con el texto original. Cuando los nombres corresponden a unidades extraídas y hay un único Bodyguard, el servidor aplica esas asociaciones sin depender de los índices propuestos por el LLM. Admite varios líderes o apoyos en el mismo bloque.
 
 Si una importación devuelve 502, los logs del backend incluyen `list_import_failed` con `phase`, `reason` y, para fallos HTTP del proveedor, `upstreamStatus`; no incluyen la lista, claves ni el contenido de la respuesta del modelo. `output_limit` indica que la respuesta excedió `REMOTE_LISTS_MAX_OUTPUT_TOKENS`; `grouping` indica una asignación inválida y `comparison` un fallo al resumir equipo.
+
+Cuando la ficha descargada incluye keywords identificables, su categoría prevalece sobre la propuesta del LLM: EPIC HERO, después CHARACTER, después VEHICLE/MONSTER. Los grupos liderados conservan su posición después de los personajes independientes.

@@ -48,3 +48,9 @@ test('Defiler comparison receives every declared choice and corrects an underest
  const importer=createImporter({apiKey:'test',references:{lookup:async()=>({covered:new Set([0]),warnings:[],references:[{indices:[0],sheet:{hasOptions:true,text:'WARGEAR OPTIONS: Hades battle cannon can be replaced; excruciator cannons can be replaced; heavy reaper autocannon can replace heavy baleflamer or heavy missile launcher.'}}]})},fetchImpl:async(_,opts)=>{const payload=JSON.parse(opts.body);if(calls===1){const input=JSON.parse(payload.input[0].content[0].text);assert.ok(input.units[0].wargear.includes('2× Heavy reaper autocannon'));assert.equal(input.originalText,'original export');assert.match(payload.instructions,/TODAS/);}const value=calls++===0?raw:{summaries:[{index:0,notes:'2 Excruciator cannon\n1 Hades battle cannon\n1 Heavy reaper autocannon',warning:''}]};return {ok:true,json:async()=>({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(value)}]}]})};}});
  const result=await importer('original export');assert.equal(result.units[0].notes,'2× Excruciator cannon\n1× Hades battle cannon\n2× Heavy reaper autocannon');assert.ok(!result.units[0].notes.includes('Shearing'));
 });
+
+test('verified keywords prioritize epic heroes over monster and character keywords',()=>{
+ const html='<title>Mortarion [11th edition]</title><div>UNIT COMPOSITION</div><div>This model is equipped with: Silence.</div><div>KEYWORDS: MONSTER; CHARACTER; EPIC HERO; MORTARION</div><div>FACTION KEYWORDS: DEATH GUARD</div>';
+ assert.equal(extractSheet(html,'https://wahapedia.ru/wh40k11ed/factions/death-guard/Mortarion').category,'epic_character');
+ assert.equal(extractSheet(html.replace('EPIC HERO;',''),'https://wahapedia.ru/wh40k11ed/factions/death-guard/Mortarion').category,'character');
+});
