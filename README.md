@@ -1041,3 +1041,7 @@ El orden visual predeterminado es: personajes épicos, personajes, unidades lide
 Listas remotas opcionales con subida en un paso, sincronización directa, facción y destacamentos automáticos, agrupación de líderes y apoyos, referencias de 11.ª con caché de siete días y notas limitadas a elecciones de equipo. Conserva cantidades repetidas, omite equipo obligatorio o sin verificar y controla el consumo del backend. Las listas se distribuyen llenando primero la izquierda y se ordenan por personajes épicos, personajes, unidades lideradas, otras unidades y vehículos/monstruos. Incluye edición de estados desde el overlay.
 
 En Railway configura `ONNXRUNTIME_NODE_INSTALL=skip` para evitar descargar componentes GPU del TTS que el backend de listas no utiliza.
+
+Los bloques explícitos `Attached unit N` con `Attached as: Leader`, `Support` y `Bodyguard` se contrastan con el texto original. Cuando los nombres corresponden a unidades extraídas y hay un único Bodyguard, el servidor aplica esas asociaciones sin depender de los índices propuestos por el LLM. Admite varios líderes o apoyos en el mismo bloque.
+
+Si una importación devuelve 502, los logs del backend incluyen `list_import_failed` con `phase`, `reason` y, para fallos HTTP del proveedor, `upstreamStatus`; no incluyen la lista, claves ni el contenido de la respuesta del modelo. `output_limit` indica que la respuesta excedió `REMOTE_LISTS_MAX_OUTPUT_TOKENS`; `grouping` indica una asignación inválida y `comparison` un fallo al resumir equipo.

@@ -80,3 +80,28 @@ test('multiple leaders and support characters join the same unit without losing 
  const {cleanList,groupLeaders}=require('../remote-lists/importer');const list=cleanList({name:'Army',units:[{name:'Captain',characters:[],enhancement:'Relic',notes:''},{name:'Apothecary',characters:[],notes:'Support'},{name:'Squad',characters:[],notes:'2× plasma'}]});
  const grouped=groupLeaders(list.units,[2,2,-1]);assert.equal(grouped.units.length,1);assert.deepEqual(grouped.units[0].characters,['Captain','Apothecary']);assert.equal(grouped.units[0].name,'Squad');assert.equal(grouped.units[0].enhancement,'Captain: Relic');assert.match(grouped.units[0].notes,/Apothecary: Support/);
 });
+
+test('explicit attached blocks override incorrect LLM indices and keep multiple leaders on their bodyguard',()=>{
+ const {attachedTargets,groupLeaders,cleanList}=require('../remote-lists/importer');
+ const text=`ATTACHED UNITS
+Attached unit 1
+Lord of Virulence (115 Points)
+ • Attached as: Leader (Character)
+Blightlord Terminators (370 Points)
+ • Attached as: Bodyguard
+Attached unit 2
+Malignant Plaguecaster (60 Points)
+ • Attached as: Leader (Character)
+Biologus Putrifier (60 Points)
+ • Attached as: Leader (Character)
+Plague Marines (175 Points)
+ • Attached as: Bodyguard (Battleline)
+CHARACTERS
+Mortarion (375 Points)`;
+ const raw=[{name:'Mortarion',leaderOf:-1},{name:'Biologus Putrifier',leaderOf:2},{name:'Malignant Plaguecaster',leaderOf:1},{name:'Plague Marines',leaderOf:1},{name:'Lord of Virulence',leaderOf:7,enhancement:'Furnace of Plagues'},{name:'Blightlord Terminators',leaderOf:4}];
+ const targets=attachedTargets(text,raw);assert.deepEqual(targets,[-1,3,3,-1,5,-1]);const list=cleanList({name:'Army',units:raw.map(u=>({...u,characters:[],notes:''}))});const grouped=groupLeaders(list.units,targets);assert.equal(grouped.units.length,3);assert.deepEqual(grouped.units[1].characters,['Biologus Putrifier','Malignant Plaguecaster']);assert.equal(grouped.units[2].enhancement,'Lord of Virulence: Furnace of Plagues');
+});
+test('incomplete LLM output records phase and output limit without disclosing response content',async()=>{
+ const {createImporter}=require('../remote-lists/importer');const importer=createImporter({apiKey:'test',fetchImpl:async()=>({ok:true,json:async()=>({status:'incomplete',incomplete_details:{reason:'max_output_tokens'},output:[]})})});
+ await assert.rejects(importer('Army'),e=>e.importPhase==='extraction'&&e.diagnostic==='output_limit');
+});

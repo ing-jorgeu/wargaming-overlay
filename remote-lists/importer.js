@@ -10,24 +10,26 @@ function cleanList(value){if(!value||!Array.isArray(value.units)||!value.units.l
 function createImporter({apiKey,model='gpt-6-luna',maxOutputTokens=4000,fetchImpl=fetch,references}){
  if(!apiKey)throw Error('Falta OPENAI_API_KEY.');
  const importer=async(text,{reserveTokens=()=>{}}={})=>{
+  let phase='extraction';try{
   async function call(instruction,input,format,name){
    const payload={model,store:false,instructions:instruction,input:[{role:'user',content:[{type:'input_text',text:input}]}],reasoning:{effort:'none'},max_output_tokens:maxOutputTokens,text:{format:{type:'json_schema',name,strict:true,schema:format}}};
    // Charge every request, including the second pass and its reference fragments, before dispatch.
    reserveTokens(Buffer.byteLength(JSON.stringify(payload))+maxOutputTokens+1024);
-   const r=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},signal:AbortSignal.timeout(60000),body:JSON.stringify(payload)});if(!r.ok)throw Error('El servicio de interpretación no pudo procesar la lista.');const result=await r.json();if(result.status!=='completed')throw Error('La interpretación no terminó. Reduce el texto o revisa la lista manualmente.');return JSON.parse((result.output||[]).flatMap(x=>x.content||[]).filter(c=>c.type==='output_text').map(c=>c.text).join(''));
+   const r=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},signal:AbortSignal.timeout(60000),body:JSON.stringify(payload)});if(!r.ok)throw Object.assign(Error('El servicio de interpretación no pudo procesar la lista.'),{diagnostic:'upstream_http',upstreamStatus:r.status});const result=await r.json();if(result.status!=='completed')throw Object.assign(Error('La interpretación no terminó.'),{diagnostic:result.incomplete_details?.reason==='max_output_tokens'?'output_limit':'incomplete_response'});return JSON.parse((result.output||[]).flatMap(x=>x.content||[]).filter(c=>c.type==='output_text').map(c=>c.text).join(''));
   }
-  const raw=await call(extractionInstructions,text,schema,'army_list');const list=cleanList(raw);for(const unit of list.units)unit.notes='';
-  let found={references:[],warnings:['No hay referencias de 11.ª disponibles. No se mostrará equipo sin verificar.'],covered:new Set()};if(references)found=await references.lookup(raw.faction,raw.units);
+  const raw=await call(extractionInstructions,text,schema,'army_list');phase='validation';const list=cleanList(raw);for(const unit of list.units)unit.notes='';
+  phase='references';let found={references:[],warnings:['No hay referencias de 11.ª disponibles. No se mostrará equipo sin verificar.'],covered:new Set()};if(references)found=await references.lookup(raw.faction,raw.units);
   list.warnings=[...found.warnings,...list.warnings];
   const fixed=new Set(found.references.filter(r=>r.sheet.hasOptions===false).flatMap(r=>r.indices));const comparable=new Set([...found.covered].filter(i=>!fixed.has(i)));
-  if(comparable.size){
+  if(comparable.size){phase='comparison';
    const input=JSON.stringify({originalText:text,units:raw.units.map((u,index)=>({index,name:u.name,wargear:aggregateWargear(u.wargear||[]),notes:''})).filter(u=>comparable.has(u.index)),references:found.references.filter(r=>r.sheet.hasOptions!==false)});
    const compared=await call(compareInstructions,input,compareSchema,'wargear_summary');const seen=new Set();
    if(!Array.isArray(compared.summaries))throw Error('Comparación inválida.');
    for(const s of compared.summaries){if(!comparable.has(s.index)||seen.has(s.index)||typeof s.notes!=='string'||s.notes.length>160||typeof s.warning!=='string')throw Error('Comparación inválida.');seen.add(s.index);list.units[s.index].notes=correctQuantities(s.notes,raw.units[s.index].wargear||[]);if(s.warning)list.warnings.push(s.warning.slice(0,300));}
    for(const index of comparable)if(!seen.has(index))list.warnings.unshift('No se pudo comparar '+list.units[index].name+'. No se mostrará equipo sin verificar.');
   }
-  const grouped=groupLeaders(list.units,raw.units.map(u=>u.leaderOf??-1));list.units=grouped.units;list.warnings.push(...grouped.warnings);list.warnings=list.warnings.slice(0,20);return list;
+  phase='grouping';const grouped=groupLeaders(list.units,attachedTargets(text,raw.units));list.units=grouped.units;list.warnings.push(...grouped.warnings);list.warnings=list.warnings.slice(0,20);return list;
+  }catch(error){if(!error.importPhase)error.importPhase=phase;throw error;}
  };importer.reservesCalls=true;return importer;
 }
 function tokenReservation(text,maxOutputTokens){return Buffer.byteLength(text)+Buffer.byteLength(instructions)+Buffer.byteLength(JSON.stringify(schema))+maxOutputTokens+1024;}
@@ -44,6 +46,21 @@ function correctQuantities(notes,wargear){
  const corrected=notes.split('\n').map(line=>{const item=equipmentEntry(line);const total=item&&totals.get(equipmentKey(item.name));return total?`${total}× ${item.name}`:line;}).join('\n');
  if(corrected.length>160)throw Error('Las cantidades corregidas superan el límite de notas.');return corrected;
 }
+function attachedTargets(text,units){
+ const targets=units.map(u=>u.leaderOf??-1),groups=[];let group,current;
+ const names=new Map();units.forEach((u,index)=>{const key=equipmentKey(u.name);if(!names.has(key))names.set(key,[]);names.get(key).push(index);});
+ const used=new Set();
+ for(const line of text.split(/\r?\n/)){
+  if(/^\s*Attached unit\s+\d+\s*$/i.test(line)){group=[];groups.push(group);current=null;continue;}
+  if(/^\s*(CHARACTERS|BATTLELINE|DEDICATED TRANSPORTS|OTHER DATASHEETS)\s*$/i.test(line)){group=null;current=null;continue;}
+  if(!group)continue;
+  const header=line.trim().match(/^(.+?)\s*\([\d.,]+\s+Points?\)\s*$/i);
+  if(header){const candidates=names.get(equipmentKey(header[1]))||[];const index=candidates.find(i=>!used.has(i));current=index===undefined?null:{index,role:null};if(current){used.add(index);group.push(current);}continue;}
+  const role=line.match(/Attached as:\s*(Leader|Support|Bodyguard)\b/i);if(role&&current)current.role=role[1].toLowerCase();
+ }
+ for(const group of groups){const bodyguards=group.filter(u=>u.role==='bodyguard');if(bodyguards.length!==1)continue;const bodyguard=bodyguards[0].index;targets[bodyguard]=-1;for(const unit of group)if(['leader','support'].includes(unit.role))targets[unit.index]=bodyguard;}
+ return targets;
+}
 function groupLeaders(units,targets){
  const result=units.map(u=>({...u,characters:[...u.characters]})),removed=new Set(),warnings=[];
  for(let i=0;i<result.length;i++){
@@ -57,4 +74,4 @@ function groupLeaders(units,targets){
  }
  return {units:result.filter((_,i)=>!removed.has(i)),warnings};
 }
-module.exports={createImporter,cleanList,groupLeaders,aggregateWargear,correctQuantities,tokenReservation};
+module.exports={createImporter,cleanList,groupLeaders,attachedTargets,aggregateWargear,correctQuantities,tokenReservation};

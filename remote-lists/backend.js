@@ -54,7 +54,7 @@ function createRemoteServer({dataDir,managerToken,importer,tokenBudget=500000,ma
     if(!importer.reservesCalls)reserveTokens(tokenReservation(input.text,maxOutputTokens));
     slot.attempts++;delete slot.draft;save();busy.add(side);
     try{
-     let list;try{list=cleanList(await importer(input.text,{reserveTokens}));}catch(e){if(e.status)throw e;throw fail('No se pudo interpretar la lista. Puedes reintentar si quedan intentos.',502);}
+     let list;try{list=cleanList(await importer(input.text,{reserveTokens}));}catch(e){if(e.status)throw e;console.error(JSON.stringify({event:'list_import_failed',phase:e.importPhase||'validation',reason:['upstream_http','output_limit','incomplete_response'].includes(e.diagnostic)?e.diagnostic:'invalid_result',...(Number.isInteger(e.upstreamStatus)?{upstreamStatus:e.upstreamStatus}:{})}));throw fail('No se pudo interpretar la lista. Puedes reintentar si quedan intentos.',502);}
      if(!isOpen(side)||slot.generation!==generation)throw fail('El manager cerró o cambió la subida. No se guardó esta interpretación.',409);
      slot.confirmed={...list,id:randomUUID(),updatedAt:new Date(now()).toISOString()};slot.openUntil=0;delete slot.draft;save();return send(res,200,{ok:true});
     }finally{busy.delete(side);}
