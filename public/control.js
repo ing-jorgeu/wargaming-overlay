@@ -19,6 +19,7 @@ function renderPlayers(){
 function readForm(){
  const next=structuredClone(state);
  next.title=document.querySelector('#title').value;
+ next.autoPlay={enabled:document.querySelector('#auto-play-enabled').checked,durationSeconds:Number(document.querySelector('#auto-play-duration').value)};
  delete next.roundHalf;
  document.querySelectorAll('[data-side][data-key]').forEach(i=>next[i.dataset.side][i.dataset.key]=i.value);
  ['left','right'].forEach(side=>{next[side].detachments=[...document.querySelectorAll(`[data-side="${side}"][data-detachment]`)].map(i=>i.value.trim()).filter(Boolean);});
@@ -44,6 +45,7 @@ async function init(){
  factions=await fetch('/factions.json').then(r=>{if(!r.ok)throw Error('No se pudieron cargar las facciones.');return r.json();});
  state=await fetch('/state').then(r=>{if(!r.ok)throw Error('No se pudo cargar el overlay.');return r.json();});
  document.querySelector('#title').value=state.title;
+ document.querySelector('#auto-play-enabled').checked=state.autoPlay?.enabled===true;document.querySelector('#auto-play-duration').value=state.autoPlay?.durationSeconds||15;
  renderPlayers();
  document.querySelectorAll('#form button').forEach(b=>b.disabled=false);
 }

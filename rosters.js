@@ -1,6 +1,7 @@
 const {randomUUID}=require('node:crypto');
 function linkPlayers(next,previous={}){
  const used=new Set();const result={...next};
+ if(next.autoPlay!==undefined){const a=next.autoPlay;if(!a||typeof a.enabled!=='boolean'||!Number.isInteger(a.durationSeconds)||a.durationSeconds<1||a.durationSeconds>120)throw Error('Auto play: duración entre 1 y 120 segundos y estado true/false.');result.autoPlay={enabled:a.enabled,durationSeconds:a.durationSeconds};}
  for(const side of ['left','right']){
   const player=next[side];if(!player||typeof player!=='object')throw Error('Faltan los dos jugadores.');
   const known=['left','right'].map(s=>previous[s]).filter(Boolean);

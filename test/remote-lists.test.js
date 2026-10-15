@@ -114,3 +114,17 @@ test('upload validates player name before spending tokens and preserves formatio
  assert.equal(stored.playerName,'Antonio Bello');assert.equal(stored.formation,'Reconnaissance');
  const clean=require('../remote-lists/importer').cleanList(stored);assert.equal(clean.playerName,'Antonio Bello');assert.equal(clean.formation,'Reconnaissance');
 });
+
+test('automatic sync works without a panel, follows color after swaps, deduplicates and leaves upload closed',async t=>{
+ const remote=await fixture(t);const dir=await fs.mkdtemp(path.join(os.tmpdir(),'auto-lists-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+ const snapshot={players:{left:{team:'red',rosterId:'r'},right:{team:'blue',rosterId:'b'}},rosters:{b:{revision:0,units:[]},r:{revision:0,units:[]}}};let applied=0;
+ const client=createLocalRemote({enabled:true,dataDir:dir,pollIntervalMs:20,log:()=>{},env:{REMOTE_LISTS_URL:remote.base,REMOTE_LISTS_MANAGER_TOKEN:token},getSnapshot:()=>snapshot,applyRoster:(id,roster,metadata)=>{snapshot.rosters[id]=roster;Object.assign(snapshot.players.right,metadata);applied++;}});t.after(()=>client.stop());
+ await remote.request('/api/manager/blue/gate',{open:true},true);client.start();await remote.request('/api/blue/import',{text:'Army\nReconnaissance',playerName:'Ana'});
+ const deadline=Date.now()+3000;while(!applied&&Date.now()<deadline)await new Promise(r=>setTimeout(r,20));
+ assert.equal(applied,1);assert.equal(snapshot.players.right.playerName,'Ana');assert.equal(snapshot.players.right.formation,'Reconnaissance');assert.equal(snapshot.rosters.r.units.length,0);
+ snapshot.rosters.b.units[0].destroyed=true;await new Promise(r=>setTimeout(r,80));assert.equal(applied,1);assert.equal(snapshot.rosters.b.units[0].destroyed,true);
+ assert.equal((await remote.request('/api/blue/status')).data.open,false);assert.equal((await remote.request('/api/blue/import',{text:'Again'})).status,403);
+ client.stop();
+ const local=http.createServer((req,res)=>client.handle(req,res,new URL(req.url,'http://localhost')));await new Promise(r=>local.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>local.close(r)));
+ const response=await fetch('http://127.0.0.1:'+local.address().port+'/remote-lists/qr/blue.svg');assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/image\/svg/);assert.match(await response.text(),/<svg/);
+});

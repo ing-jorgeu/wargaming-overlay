@@ -37,7 +37,7 @@ readline.createInterface({ input: reader.stdout }).on('line', line => {
 reader.on('error', e => {clearInterval(watchdog);console.error('No se pudo iniciar el lector:',e.message);});
 reader.on('exit', (code,signal) => { clearInterval(watchdog);console.error(`Lector detenido (${signal||'código '+code}). Reinicia el servidor.`); game = mergeGame(game, {connected:false, error:'Lector detenido. Reinicia el servidor.'}); persistGame(); });
 }
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); youtube?.stop(); process.exit(); });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); youtube?.stop(); remoteLists?.stop(); process.exit(); });
 process.on('exit', () => {reader?.kill();youtube?.queue?.clear();});
 const {syncStats} = require('./listhammer');
 const root = path.join(__dirname, 'public');
@@ -91,6 +91,7 @@ async function readToastBody(req,limit=8192) {
 const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./remote-lists/local').createLocalRemote({enabled:true,dataDir,getSnapshot:rosterSnapshot,applyRoster:(id,roster,metadata)=>{
  const next={...rosters,[id]:roster};fs.writeFileSync(rostersPath+'.tmp',JSON.stringify(next,null,2));fs.renameSync(rostersPath+'.tmp',rostersPath);rosters=next;if(metadata){for(const side of ['left','right'])if(state[side].rosterId===id)state[side]={...state[side],...(metadata.playerName?{name:metadata.playerName,appName:metadata.playerName}:{}),...(metadata.formation?{formation:metadata.formation}:{}),...(metadata.faction?{faction:metadata.faction}:{}),...(metadata.detachments.length?{detachments:metadata.detachments}:{})};saveState();broadcast();}else broadcastRosters();
 }}):null;
+remoteLists?.start();
 let statsSyncTask=null;
 function refreshStats(){if(!statsSyncTask)statsSyncTask=syncStats(dataDir).then(stats=>{statsCache=stats;announcements.refresh();return stats;}).finally(()=>{statsSyncTask=null;});return statsSyncTask;}
 const server = http.createServer(async (req, res) => {

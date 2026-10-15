@@ -1,6 +1,6 @@
 {
   "name": "@ing.jorgeu/wargaming-overlay",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
     "wargaming-overlay": "cli.js",
@@ -71,7 +71,8 @@
     "@grpc/grpc-js": "^1.14.5",
     "@grpc/proto-loader": "^0.8.1",
     "onnxruntime-node": "1.30.0",
-    "onnxruntime-web": "1.30.0"
+    "onnxruntime-web": "1.30.0",
+    "qrcode": "1.5.4"
   },
   "optionalDependencies": {
     "node-cpal": "1.0.0"

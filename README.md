@@ -1096,3 +1096,15 @@ En Partida se indica quién ocupa izquierda y derecha. **Intercambiar posiciones
 El botón amarillo **Abrir overlay principal** está en la cabecera. Las pestañas de jugadores usan sus nombres y colores; Partida muestra una tarjeta por posición.
 
 La página pública pide **Tu nombre** además de la lista. Al sincronizar se actualizan tanto el nombre visible como el nombre en Tabletop Battles con ese mismo valor, junto a facción, destacamentos y disposición declarada. Si la lista no contiene disposición, se conserva la actual. Los nombres de lista y jugador son campos distintos. Para habilitar este formulario hay que desplegar también la nueva versión del backend remoto (no basta con actualizar la app local).
+
+### Recepción automática de listas
+
+Con listas remotas activadas en el GUI, el servidor local consulta el backend cada cinco segundos, incluso sin el panel abierto. Al recibir una lista la aplica al jugador de su color, con nombre, alias, facción, destacamentos y disposición. Cada importación se aplica una sola vez y los reintentos conservan los estados de las unidades. El backend cierra la subida al guardar una lista correctamente; solo el manager puede habilitarla de nuevo.
+
+En cada pestaña del panel aparece un QR generado localmente: escanéalo o haz clic para abrir la subida en una pestaña nueva. Solo se muestran los controles para habilitar/deshabilitar subidas; la dirección del backend y su credencial se configuran desde el GUI. No hace falta pulsar Sincronizar.
+
+### Auto play de listas
+
+En **Partida → Auto play**, activa la presentación automática y elige la duración (15 segundos por defecto; de 1 a 120). Guarda con **Actualizar overlay**. Viene apagada.
+
+Al detectar un cambio de ronda o de TOP/BOTTOM, el overlay principal muestra a pantalla completa la misma página de lista del jugador activo y después vuelve al overlay normal. Sigue la identidad y color del jugador aunque intercambies posiciones. Si el turno ya se conoce, la primera lectura al abrir o activar la opción solo establece el turno inicial. Si pasa de desconocido a TOP/BOTTOM, se muestra la lista al detectarlo; los cambios de puntos o CP no disparan la presentación. Requiere que ambos jugadores estén enlazados correctamente por nombre con Tabletop Battles y que se conozca quién juega primero. Desactivarla oculta inmediatamente la presentación.

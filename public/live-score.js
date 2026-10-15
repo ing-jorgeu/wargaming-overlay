@@ -3,7 +3,7 @@
  const panel=make('section','','live-score');document.querySelector('#overlay-stage').append(panel);
  let settings=null,game=null;
  function renderLive(){
-  panel.replaceChildren();if(!settings)return;
+  panel.replaceChildren();if(!settings)return;window.OverlayAutoPlay?.update(settings,game);
   const matches=MatchView.matchPlayers(settings,game);
   const round=make('div',MatchView.roundLabel(settings,game,matches.every(Boolean)),'live-round');panel.append(round);
   ['left','right'].forEach((side,i)=>{
