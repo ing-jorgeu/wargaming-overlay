@@ -1108,3 +1108,9 @@ En cada pestaña del panel aparece un QR generado localmente: escanéalo o haz c
 En **Partida → Auto play**, activa la presentación automática y elige la duración (15 segundos por defecto; de 1 a 120). Guarda con **Actualizar overlay**. Viene apagada.
 
 Al detectar un cambio de ronda o de TOP/BOTTOM, el overlay principal muestra a pantalla completa la misma página de lista del jugador activo y después vuelve al overlay normal. Sigue la identidad y color del jugador aunque intercambies posiciones. Si el turno ya se conoce, la primera lectura al abrir o activar la opción solo establece el turno inicial. Si pasa de desconocido a TOP/BOTTOM, se muestra la lista al detectarlo; los cambios de puntos o CP no disparan la presentación. Requiere que ambos jugadores estén enlazados correctamente por nombre con Tabletop Battles y que se conozca quién juega primero. Desactivarla oculta inmediatamente la presentación.
+
+### Galaxy como cámara y control independiente de Tabletop Battles
+
+Nueva opción experimental **Galaxy: cámara y marcador** en el GUI, apagada por defecto, o `npm run galaxy -- --connect IP:PUERTO`. Abre ventanas distintas de control y cámara; el overlay conserva su fuente Navegador. Requiere scrcpy instalado aparte. Si Samsung no permite leer la pantalla virtual, el modo físico conserva el lector original y puede capturar la cámara directamente.
+
+Consulta [configuración, OBS, reconexión y pruebas pendientes](docs/galaxy-session.md). No se validó un Galaxy físico durante el desarrollo; prueba la compatibilidad antes de usarlo en un evento.

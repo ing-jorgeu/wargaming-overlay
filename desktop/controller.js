@@ -1,14 +1,15 @@
 const fs=require('node:fs'),path=require('node:path'),net=require('node:net');
 const {spawn}=require('node:child_process');const {EventEmitter}=require('node:events');
-const defaults={port:8765,interval:3,serial:'',adb:'',python:'',dataDir:'',remoteLists:false,remoteUrl:'',managerToken:'',tts:false,provider:'kokoro',fallback:process.platform==='darwin'?'say':'none',voice:'ef_dora',speed:1};
+const defaults={galaxy:false,scrcpy:'',scoreDisplay:'virtual',cameraMode:'scrcpy',allowUsb:false,port:8765,interval:3,serial:'',adb:'',python:'',dataDir:'',remoteLists:false,remoteUrl:'',managerToken:'',tts:false,provider:'kokoro',fallback:process.platform==='darwin'?'say':'none',voice:'ef_dora',speed:1};
 function settings(input){
  if(!input||typeof input!=='object')throw Error('Configuración inválida.');const c={};for(const key of Object.keys(defaults))c[key]=input[key]??defaults[key];
  c.port=Number(c.port);c.interval=Number(c.interval);c.speed=Number(c.speed);
  if(!Number.isInteger(c.port)||c.port<1024||c.port>65535)throw Error('Puerto: 1024–65535.');
  if(!Number.isFinite(c.interval)||c.interval<1||c.interval>60)throw Error('Intervalo: 1–60 segundos.');
  if(!Number.isFinite(c.speed)||c.speed<.5||c.speed>2)throw Error('Velocidad: 0.5–2.');
- for(const key of ['serial','adb','python','dataDir','remoteUrl','managerToken'])if(typeof c[key]!=='string'||c[key].length>2048||c[key].includes('\0'))throw Error('Campo inválido: '+key);
- for(const key of ['remoteLists','tts'])if(typeof c[key]!=='boolean')throw Error('Opción inválida: '+key);
+ for(const key of ['scrcpy','serial','adb','python','dataDir','remoteUrl','managerToken'])if(typeof c[key]!=='string'||c[key].length>2048||c[key].includes('\0'))throw Error('Campo inválido: '+key);
+ for(const key of ['galaxy','allowUsb','remoteLists','tts'])if(typeof c[key]!=='boolean')throw Error('Opción inválida: '+key);
+ if(!['virtual','physical'].includes(c.scoreDisplay)||!['scrcpy','external','none'].includes(c.cameraMode))throw Error('Modo Galaxy inválido.');
  if(!['kokoro','say'].includes(c.provider)||!['say','none'].includes(c.fallback)||!['ef_dora','em_alex','em_santa'].includes(c.voice))throw Error('Proveedor o voz inválidos.');
  if(process.platform!=='darwin'&&(c.provider==='say'||c.fallback==='say'))throw Error('say solo funciona en macOS.');
  if(c.remoteUrl){const u=new URL(c.remoteUrl);if(u.username||u.password||u.pathname!=='/'||u.search||u.hash||!(u.protocol==='https:'||(u.protocol==='http:'&&['127.0.0.1','localhost'].includes(u.hostname))))throw Error('Backend: HTTPS sin rutas, o localhost para pruebas.');c.remoteUrl=u.origin;}
@@ -21,7 +22,7 @@ class Controller extends EventEmitter{
  log(text,secret=''){const safe=String(text).split(secret||'\0').join(secret?'[credencial]':'\0');this.logs=(this.logs+safe).slice(-20000);this.emit('status',this.status());}
  async start(input){
  if(this.phase!=='stopped')throw Error('El servidor ya está iniciado o arrancando.');const c=settings(input);const runId=++this.runId;this.phase='starting';this.port=c.port;this.logs='';this.emit('status',this.status());
- try{await available(c.port);if(runId!==this.runId)throw Error('Inicio cancelado.');const args=[path.join(this.runtime,'cli.js'),'start','--port',String(c.port),'--interval',String(c.interval)];for(const [key,flag]of [['serial','--serial'],['adb','--adb'],['python','--python'],['dataDir','--data-dir']])if(c[key])args.push(flag,c[key]);if(c.remoteLists)args.push('--remote-lists');
+ try{await available(c.port);if(runId!==this.runId)throw Error('Inicio cancelado.');const args=[path.join(this.runtime,'cli.js'),'start','--port',String(c.port),'--interval',String(c.interval)];for(const [key,flag]of [['serial','--serial'],['adb','--adb'],['python','--python'],['dataDir','--data-dir']])if(c[key])args.push(flag,c[key]);if(c.remoteLists)args.push('--remote-lists');if(c.galaxy){args[1]='galaxy';args.push('--score-display',c.scoreDisplay,'--camera-mode',c.cameraMode);if(c.scrcpy)args.push('--scrcpy',c.scrcpy);if(c.allowUsb)args.push('--allow-usb');}
  const env={...process.env,ELECTRON_RUN_AS_NODE:'1',YOUTUBE_CHAT_TTS_ENABLED:String(c.tts),TTS_PROVIDER:c.provider,TTS_FALLBACK:c.fallback,KOKORO_VOICE:c.voice,KOKORO_SPEED:String(c.speed)};
  delete env.REMOTE_LISTS_URL;delete env.REMOTE_LISTS_MANAGER_TOKEN;if(c.remoteLists){if(c.remoteUrl)env.REMOTE_LISTS_URL=c.remoteUrl;if(c.managerToken)env.REMOTE_LISTS_MANAGER_TOKEN=c.managerToken;}
  const child=this.spawnImpl(this.executable,args,{env,stdio:['ignore','pipe','pipe'],shell:false,windowsHide:true});this.child=child;

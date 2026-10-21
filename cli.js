@@ -15,6 +15,8 @@ const help=`wargaming-overlay ${version} — overlay local para OBS
   wargaming-overlay setup --dry-run        Muestra el plan sin instalar ni consultar ADB
   wargaming-overlay migrate CARPETA        Copia el estado del overlay anterior
 
+  wargaming-overlay galaxy --help          Cámara Galaxy + control independiente
+
 Opciones de start/doctor:
   --remote-lists    Habilita enlaces y sincronización de listas remotas
   --port 8765       Puerto local (1024–65535); no necesita sudo
@@ -22,6 +24,7 @@ Opciones de start/doctor:
   --interval 3      Pausa entre lecturas (segundos, mínimo 1)
   --adb RUTA        Ejecutable ADB
   --python RUTA     Python 3.8 o posterior
+  --display-file RUTA Estado de pantalla virtual gestionado por galaxy
   --data-dir RUTA   Carpeta para guardar configuración y partida
 
 Opciones de prueba de voz:
@@ -37,13 +40,15 @@ Por defecto: ~/Library/Application Support/wargaming-overlay en macOS;
 Ctrl+C detiene el servidor y lector. El último estado queda guardado.
 `;
 async function main(argv=process.argv.slice(2),{voiceTest}={}){
+ if(argv[0]==='galaxy')return require('./galaxy/cli').main(argv.slice(1));
  const args=[...argv];
  if(args.includes('--help')||args.includes('-h')){console.log(help);return}
  if(args.includes('--version')){console.log(version);return}
  let command=args[0]&&!args[0].startsWith('-')?args.shift():'start';
  const options={};let source;
- const keys={'--port':'port','--serial':'serial','--interval':'interval','--adb':'adb','--python':'python','--data-dir':'dataDir','--client-secret':'clientSecret','--test-tts':'testText','--text':'text','--voice':'voice','--provider':'provider','--fallback':'fallback','--speed':'speed'};
+ const keys={'--port':'port','--serial':'serial','--interval':'interval','--adb':'adb','--python':'python','--display-file':'displayFile','--data-dir':'dataDir','--client-secret':'clientSecret','--test-tts':'testText','--text':'text','--voice':'voice','--provider':'provider','--fallback':'fallback','--speed':'speed'};
  while(args.length){const a=args.shift();if(a==='--remote-lists')options.remoteLists=true;else if(a==='--install-adb')options.install=true;else if(a==='--dry-run')options.dryRun=true;else if(keys[a]){const value=args.shift();if(value===undefined||(!['--text','--test-tts'].includes(a)&&(!value||value.startsWith('--'))))throw Error(`Falta el valor de ${a}`);options[keys[a]]=value}else if(command==='migrate'&&!source&&!a.startsWith('-'))source=a;else throw Error(`Argumento desconocido: ${a}. Usa --help.`)}
+ if(options.displayFile&&command!=='start')throw Error('--display-file solo se usa con start.');
  if(options.remoteLists&&command!=='start')throw Error('--remote-lists solo se usa con start.');
  if(options.testText!==undefined){if(command!=='start')throw Error('--test-tts solo se usa sin subcomando o con start.');command='test-tts';options.text=options.testText;delete options.testText;}
  if(!['start','doctor','setup','migrate','youtube-auth','test-tts'].includes(command))throw Error('Comando desconocido. Usa --help.');
@@ -93,6 +98,7 @@ async function main(argv=process.argv.slice(2),{voiceTest}={}){
  const r=check(options);if(!r.adb||!r.python||['PYTHON_VERSION','PYTHON_MISSING'].includes(r.code))throw Error(r.message);
  if(!r.ok)console.error(r.message+'\nEl panel permanecerá disponible mientras conectas el teléfono.');
  fs.mkdirSync(dataDir,{recursive:true});fs.accessSync(dataDir,fs.constants.W_OK);
+ if(options.displayFile)process.env.OVERLAY_DISPLAY_FILE=path.resolve(options.displayFile);else delete process.env.OVERLAY_DISPLAY_FILE;
  process.env.OVERLAY_REMOTE_LISTS_ENABLED=options.remoteLists?'true':'false';
  process.env.OVERLAY_DATA_DIR=dataDir;process.env.PORT=String(port);process.env.OVERLAY_ADB=r.adb;process.env.OVERLAY_PYTHON=r.python;process.env.OVERLAY_SERIAL=options.serial||'';process.env.OVERLAY_INTERVAL=String(interval);
  require('./server');

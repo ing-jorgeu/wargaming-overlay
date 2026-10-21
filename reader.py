@@ -16,7 +16,14 @@ if __name__ == '__main__':
         try:
             device = connection.select()
             serial = device['serial']
-            state = parse(capture(serial))
+            display_id, helper = None, None
+            if os.environ.get('OVERLAY_DISPLAY_FILE'):
+                session = json.loads(Path(os.environ['OVERLAY_DISPLAY_FILE']).read_text())
+                if not session.get('active') or session.get('identity') != connection.identity:
+                    raise ValueError('Pantalla virtual desconectada. Esperando recuperación de la sesión Galaxy.')
+                display_id, helper = session.get('displayId'), session.get('helper')
+                if display_id is None: raise ValueError('Esperando el identificador de la pantalla virtual.')
+            state = parse(capture(serial, display_id, helper))
             print(json.dumps(dict(state, connected=True, phoneConnected=True, transport=device["transport"], deviceSerial=serial, updatedAt=time.time(), error=None)), flush=True)
         except Exception as e:
             message = str(e)

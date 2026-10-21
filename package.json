@@ -17,7 +17,8 @@
     "dev:remote-lists": "node --env-file=.env.dev remote-lists/dev.js",
     "desktop:start": "npm --prefix desktop start",
     "desktop:package": "npm --prefix desktop run package",
-    "desktop:make": "npm --prefix desktop run make"
+    "desktop:make": "npm --prefix desktop run make",
+    "galaxy": "node cli.js galaxy"
   },
   "engines": {
     "node": ">=22"
@@ -48,7 +49,9 @@
     "tts",
     "scripts/tts-demo.js",
     "scripts/setup-kokoro.js",
-    "remote-lists"
+    "remote-lists",
+    "galaxy",
+    "docs/galaxy-session.md"
   ],
   "license": "0BSD",
   "publishConfig": {

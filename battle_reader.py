@@ -117,7 +117,14 @@ def save(state):
 def adb(serial, *args):
     return subprocess.run([os.environ.get('OVERLAY_ADB', 'adb'), '-s', serial, *args], check=True, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=18).stdout
 
-def capture(serial):
+def capture(serial, display_id=None, helper=None):
+    if display_id is not None:
+        if not isinstance(display_id, int) or display_id < 1 or not re.fullmatch(r'/data/local/tmp/overlay-display-[a-f0-9]{16}\.jar', helper or ''):
+            raise ValueError('Estado de pantalla virtual inválido. Reinicia la sesión Galaxy.')
+        output = adb(serial, 'shell', 'CLASSPATH=' + helper + ':/system/framework/uiautomator.jar', 'app_process', '/system/bin', 'overlay.DisplayDump', str(display_id))
+        start = output.find('<?xml')
+        if start < 0: raise ValueError('La pantalla virtual no expone su contenido. Prueba el modo de pantalla física.')
+        return output[start:]
     adb(serial, 'shell', 'uiautomator', 'dump', '/sdcard/codex-ttba.xml')
     return adb(serial, 'exec-out', 'cat', '/sdcard/codex-ttba.xml')
 
