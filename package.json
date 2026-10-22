@@ -1,6 +1,6 @@
 {
   "name": "@ing.jorgeu/wargaming-overlay",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Overlay local para OBS con lectura Android por ADB",
   "bin": {
     "wargaming-overlay": "cli.js",
@@ -18,7 +18,8 @@
     "desktop:start": "npm --prefix desktop start",
     "desktop:package": "npm --prefix desktop run package",
     "desktop:make": "npm --prefix desktop run make",
-    "galaxy": "node cli.js galaxy"
+    "galaxy": "node cli.js galaxy",
+    "tactics": "node cli.js tactics"
   },
   "engines": {
     "node": ">=22"
@@ -51,7 +52,10 @@
     "scripts/setup-kokoro.js",
     "remote-lists",
     "galaxy",
-    "docs/galaxy-session.md"
+    "docs/galaxy-session.md",
+    "tactics",
+    "docs/tactics.md",
+    "docs/tactics-validation.md"
   ],
   "license": "0BSD",
   "publishConfig": {
@@ -75,7 +79,8 @@
     "@grpc/proto-loader": "^0.8.1",
     "onnxruntime-node": "1.30.0",
     "onnxruntime-web": "1.30.0",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "ws": "^8.22.0"
   },
   "optionalDependencies": {
     "node-cpal": "1.0.0"

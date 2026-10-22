@@ -20,13 +20,14 @@ function commands(o,serial){
  const control=[...common,'--window-title=Overlay - Tabletop Battles','--max-fps=20','--video-bit-rate=2M'];
  if(o.scoreDisplay==='virtual')control.push('--new-display='+o.displaySize,'--no-vd-system-decorations','--no-vd-destroy-content');
  control.push('--start-app='+PACKAGE);
- const camera=[...common,'--window-title=Overlay - Galaxy Camera','--video-source=camera','--camera-facing=back','--camera-size='+o.cameraSize,'--camera-fps='+o.cameraFps,'--video-bit-rate='+o.bitRate,'--no-control'];
+ const camera=[...common,'--window-title=Overlay - Android Camera','--video-source=camera','--camera-facing=back','--camera-size='+o.cameraSize,'--camera-fps='+o.cameraFps,'--video-bit-rate='+o.bitRate,'--no-control'];
  return {control,camera};
 }
 function run(exe,args){const r=spawnSync(exe,args,{encoding:'utf8',timeout:15000,windowsHide:true,shell:false});if(r.error||r.status!==0)throw Error((r.error?.message||r.stderr||r.stdout||'Comando falló').trim().slice(-1000));return r.stdout;}
 function probe(input={}, {execute=run,find=locate}={}){
  const o=options(input),adb=find(o.adb||'adb'),scrcpy=find(o.scrcpy||'scrcpy');
- if(!adb||!scrcpy)throw Error('Se requieren ADB y scrcpy 3.1 o posterior. Instala scrcpy aparte; no se incluye en la app.');
+ if(!adb)throw Error('No se encontró ADB. Revisa la ruta ADB en Opciones avanzadas del GUI.');
+ if(!scrcpy)throw Error('No se encontró scrcpy. Configura Ruta a scrcpy en el GUI (en Apple Silicon suele ser /opt/homebrew/bin/scrcpy). Requiere scrcpy 3.1 o posterior, instalado aparte.');
  const help=execute(scrcpy,['--help']);for(const flag of ['--start-app','--no-clipboard-autosync',...(o.scoreDisplay==='virtual'?['--new-display','--no-vd-destroy-content']:[]),...(o.cameraMode==='scrcpy'?['--video-source','--camera-size']:[])])if(!help.includes(flag))throw Error('scrcpy no admite '+flag+'. Actualiza scrcpy.');
  const version=execute(scrcpy,['--version']).split(/\r?\n/)[0];
  if(o.connect){try{execute(adb,['connect',o.connect]);}catch(e){if(!o.expectedIdentity)throw e;}}
@@ -36,7 +37,7 @@ function probe(input={}, {execute=run,find=locate}={}){
  let device=ready.find(d=>d.serial===(o.connect||o.serial));
  if(o.expectedIdentity)device=ready.find(d=>d.identity===o.expectedIdentity&&(d.serial.includes(':')||d.serial.includes('._adb-tls-connect._tcp')))||ready.find(d=>d.identity===o.expectedIdentity);
  if(!device&&!o.serial&&!o.connect){const ids=new Set(ready.map(d=>d.identity||d.serial));if(ids.size===1)device=ready.find(d=>d.serial.includes(':')||d.serial.includes('._adb-tls-connect._tcp'))||ready[0];}
- if(!device)throw Error('Conecta y autoriza un único Galaxy, o selecciona --serial SERIAL. No hay un dispositivo autorizado que coincida.');
+ if(!device)throw Error('Conecta y autoriza un único Android, o selecciona --serial SERIAL. No hay un dispositivo autorizado que coincida.');
  if(!device.identity)throw Error('No se pudo verificar la identidad física del teléfono.');
  if(!o.allowUsb&&!device.serial.includes(':')&&!device.serial.includes('._adb-tls-connect._tcp'))throw Error('La sesión es inalámbrica. Empareja ADB Wi-Fi y usa --connect IP:puerto; para una prueba por cable añade --allow-usb.');
  const prop=name=>execute(adb,['-s',device.serial,'shell','getprop',name]).trim();
@@ -44,15 +45,29 @@ function probe(input={}, {execute=run,find=locate}={}){
  if(!execute(adb,['-s',device.serial,'shell','pm','path',PACKAGE]).includes('package:'))throw Error('Tabletop Battles no está instalada ('+PACKAGE+').');
  return {...device,adb,scrcpy,version,sdk,model:prop('ro.product.model'),android:prop('ro.build.version.release'),oneUI:prop('ro.build.version.oneui'),commands:commands(o,device.serial)};
 }
+function acquireLock(file,{isAlive=pid=>{try{process.kill(pid,0);return true;}catch(e){if(e.code==='ESRCH')return false;return true;}}}={}){
+ const write=()=>{const fd=fs.openSync(file,'wx',0o600);try{fs.writeFileSync(fd,String(process.pid));}finally{fs.closeSync(fd);}};
+ try{write();return;}catch(e){if(e.code!=='EEXIST')throw e;}
+ const original=fs.readFileSync(file,'utf8'),stat=fs.statSync(file),pid=Number(original.trim());
+ if(!/^[1-9]\d*$/.test(original.trim())||!Number.isSafeInteger(pid))throw Error('El bloqueo Android es inválido. Revisa galaxy-session.lock; no se eliminó.');
+ if(isAlive(pid))throw Error('Ya hay una sesión Android activa (PID '+pid+'). Detén esa sesión antes de iniciar otra.');
+ // Reclaim only a proven dead owner; permission failures are treated as alive.
+ const recovery=file+'.recovery';let fd;
+ try{fd=fs.openSync(recovery,'wx',0o600);}catch{throw Error('Otra instancia está recuperando la sesión Android. Reintenta en unos segundos.');}
+ try{
+  if(fs.statSync(file).ino!==stat.ino||fs.readFileSync(file,'utf8')!==original)throw Error('La sesión Android cambió mientras se recuperaba. Reintenta.');
+  fs.unlinkSync(file);write();
+ }finally{fs.closeSync(fd);fs.rmSync(recovery,{force:true});}
+}
 class GalaxySession extends EventEmitter{
  constructor(input,{spawnImpl=spawn,probeImpl=probe,execute=run,log=console.log}={}){super();this.options=options(input);this.spawn=spawnImpl;this.probe=probeImpl;this.execute=execute;this.log=log;this.children=new Set();this.stopped=true;this.generation=0;this.timer=null;this.attempt=0;this.file=path.join(this.options.dataDir,'galaxy-session.json');}
  write(value){fs.mkdirSync(this.options.dataDir,{recursive:true});fs.writeFileSync(this.file+'.tmp',JSON.stringify(value),{mode:0o600});fs.renameSync(this.file+'.tmp',this.file);}
  child(exe,args,label){const c=this.spawn(exe,args,{shell:false,windowsHide:true,env:{...process.env,ADB:this.device.adb,ELECTRON_RUN_AS_NODE:process.env.ELECTRON_RUN_AS_NODE},stdio:['ignore','pipe','pipe']});c.sessionRole=label;this.children.add(c);for(const stream of [c.stdout,c.stderr])stream?.on('data',d=>this.log('['+label+'] '+String(d).trim()));c.once('exit',()=>{this.children.delete(c);if(!this.stopped)this.recover(label+' terminó.');});c.once('error',e=>{this.children.delete(c);if(!this.stopped)this.recover(label+': '+e.message);});return c;}
  async launch(){
   const generation=++this.generation;
-  const device=this.probe({...this.options,expectedIdentity:this.identity});if(this.identity&&device.identity!==this.identity)throw Error('El dispositivo conectado no es el Galaxy de esta sesión.');this.identity=device.identity;this.device=device;
+  const device=this.probe({...this.options,expectedIdentity:this.identity});if(this.identity&&device.identity!==this.identity)throw Error('El dispositivo conectado no es el Android de esta sesión.');this.identity=device.identity;this.device=device;
   this.write({active:false,serial:device.serial,identity:device.identity});
-  this.log('Galaxy: '+device.model+' · Android '+device.android+' · '+device.version);
+  this.log('Android: '+device.model+' · Android '+device.android+' · '+device.version);
   const control=this.child(device.scrcpy,device.commands.control,'Control');
   if(this.options.scoreDisplay==='virtual'){
    const displayId=await new Promise((resolve,reject)=>{
@@ -75,13 +90,13 @@ class GalaxySession extends EventEmitter{
   if(this.options.scoreDisplay==='virtual')args.push('--display-file',this.file);
   for(const [key,flag]of [['port','--port'],['interval','--interval'],['python','--python']])if(this.options[key])args.push(flag,String(this.options[key]));
   if(this.options.remoteLists)args.push('--remote-lists');
-  if(![...this.children].some(c=>c.sessionRole==='Overlay'))this.child(process.execPath,args,'Overlay');this.log(this.options.cameraMode==='scrcpy'?'Sesión iniciada. OBS: captura SOLO «Overlay - Galaxy Camera». El marcador continúa en /overlay-art.html.':'Control iniciado. El marcador continúa en /overlay-art.html. Configura la cámara externa por separado si la elegiste.');this.emit('ready',device);
+  if(![...this.children].some(c=>c.sessionRole==='Overlay'))this.child(process.execPath,args,'Overlay');this.log(this.options.cameraMode==='scrcpy'?'Sesión iniciada. OBS: captura SOLO «Overlay - Android Camera». El marcador continúa en /overlay-art.html.':'Control iniciado. El marcador continúa en /overlay-art.html. Configura la cámara externa por separado si la elegiste.');this.emit('ready',device);
  }
- async start(){if(!this.stopped)throw Error('La sesión ya está activa.');fs.mkdirSync(this.options.dataDir,{recursive:true});this.lockFile=path.join(this.options.dataDir,'galaxy-session.lock');try{const fd=fs.openSync(this.lockFile,'wx',0o600);fs.writeFileSync(fd,String(process.pid));fs.closeSync(fd);this.ownsLock=true;}catch{throw Error('Ya hay una sesión Galaxy o un cierre incompleto. Revisa galaxy-session.lock antes de reintentar.');}this.stopped=false;try{await this.launch();}catch(e){await this.stop();throw e;}}
+ async start(){if(!this.stopped)throw Error('La sesión ya está activa.');fs.mkdirSync(this.options.dataDir,{recursive:true});this.lockFile=path.join(this.options.dataDir,'galaxy-session.lock');acquireLock(this.lockFile);this.ownsLock=true;this.stopped=false;try{await this.launch();}catch(e){await this.stop();throw e;}}
  recover(reason){if(this.recovering||this.stopped)return;if(this.options.reconnect===false){this.log(reason+' Reconexión desactivada.');void this.stop();return;}this.recovering=true;this.log(reason+' Recuperando la sesión del mismo teléfono…');this.generation++;this.write({active:false});
   this.cleanup(true).then(()=>{if(this.stopped)return;const ms=Math.min(30000,1000*2**Math.min(this.attempt++,5));this.timer=setTimeout(async()=>{this.recovering=false;if(this.stopped)return;try{await this.launch();}catch(e){this.recover(e.message);}},ms);});
  }
  async cleanup(keepOverlay=false){await Promise.all([...this.children].filter(c=>!keepOverlay||c.sessionRole!=='Overlay').map(c=>new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);this.children.delete(c);resolve();};const timer=setTimeout(()=>{c.kill('SIGKILL');finish();},5000);c.once('exit',finish);c.kill('SIGTERM');})));}
  async stop(){this.stopped=true;this.generation++;clearTimeout(this.timer);this.write({active:false});await this.cleanup();if(this.ownsLock){fs.rmSync(this.lockFile,{force:true});this.ownsLock=false;}}
 }
-module.exports={options,commands,probe,GalaxySession};
+module.exports={options,commands,probe,GalaxySession,acquireLock};

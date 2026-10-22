@@ -15,3 +15,5 @@ document.querySelector('#wifi').onclick=()=>act(async()=>{status.textContent=awa
 document.querySelector('#authorize').onclick=()=>act(async()=>{status.textContent='Completa la autorización de Google en tu navegador…';status.textContent=await call('authorize');});
 
 document.querySelector('#sync-stats').onclick=()=>act(async()=>{status.textContent="Descargando datos de ListHammer…";const result=await call("sync-stats",read());status.textContent="ListHammer actualizado: "+result.factions+" facciones · "+result.period;});
+
+document.querySelector('#tactics-panel').onclick=()=>act(()=>call('open-tactics'));

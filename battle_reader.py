@@ -29,6 +29,16 @@ def parse(xml):
         leading = texts[:first_index]
         if any(re.fullmatch(r'(PRIMARY|SECONDARY):\s*\d+/\d+', t) for t in leading):
             current = players[1 - names.index(next_name)]
+    # A headerless viewport is attributable only when Android proves that the
+    # sole continuous scroll container is at its bottom, after scrolling down.
+    # The round screen orders both player blocks exactly as the matchup header.
+    # Without directional accessibility evidence, retain the no-guess policy.
+    if not headings:
+        scrolls = [n for n in root.iter('node') if n.get('package') == 'com.goonhammer.ttba' and n.get('class') == 'android.widget.ScrollView']
+        if len(scrolls) == 1 and scrolls[0].get('scroll-backward') == 'true' and scrolls[0].get('scroll-forward') == 'false':
+            visible = {(n.get('content-desc') or n.get('text') or '').strip() for n in scrolls[0].iter('node')}
+            if any(re.fullmatch(r'SECONDARY:\s*\d+/\d+', t) for t in visible):
+                current = players[1]
     section = None
     for i, t in enumerate(texts):
         if t in names:

@@ -34,3 +34,9 @@ El paquete incluye el backend opcional de listas, la página adaptable para juga
 Antes del release, sigue las pruebas locales del README: primero el flujo demo sin gasto y después, si tienes credenciales, una importación real. `npm test` valida el flujo con un LLM simulado; no acredita por sí solo la calidad ni el coste de respuestas reales. Revisa en `npm pack --dry-run` que se incluyan `remote-lists` y `public/remote-lists-control.js`, y que no haya `.env.dev`, credenciales, datos de partidas ni cachés.
 
 Para desplegar el backend utiliza Node 22+, una sola réplica, HTTPS y un volumen persistente indicado por `REMOTE_LISTS_DATA_DIR`. Configura `OPENAI_API_KEY`, una credencial propia del manager y `REMOTE_LISTS_DEMO=false` en las variables del hosting. La caché de referencias de 11.ª caduca a los siete días. La configuración local y el presupuesto persistente no se publican con el paquete.
+
+## Anotaciones tácticas (3.4.0)
+
+Comprueba que el paquete incluya `tactics/` y las dos guías `docs/tactics*.md`. `npm run tactics` debe iniciar la herramienta sin Android; `start --tactics` la integra como función opcional. Las contraseñas y tokens de sesiones de prueba nunca se empaquetan. Las pruebas de protocolo no sustituyen una sesión real de OBS; los resultados medidos y pendientes están en `docs/tactics-validation.md`.
+
+Mantén sincronizadas las versiones del paquete y de `desktop/package.json`. El instalable del GUI se genera aparte con `npm run desktop:make`; publicar en npm no distribuye automáticamente el ZIP del escritorio.

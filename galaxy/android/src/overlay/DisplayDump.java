@@ -29,6 +29,9 @@ public final class DisplayDump {
         n.getClass().getMethod("getBoundsInScreen", rectClass).invoke(n, rect);
         attr(out,"bounds","["+rectClass.getField("left").getInt(rect)+","+rectClass.getField("top").getInt(rect)+"]["+
             rectClass.getField("right").getInt(rect)+","+rectClass.getField("bottom").getInt(rect)+"]");
+        int actions = (Integer)call(n, "getActions");
+        attr(out,"scroll-forward",(actions & 4096) != 0);
+        attr(out,"scroll-backward",(actions & 8192) != 0);
         out.append('>');
         int children = (Integer)call(n, "getChildCount");
         for (int i=0;i<children;i++) {

@@ -37,7 +37,7 @@ readline.createInterface({ input: reader.stdout }).on('line', line => {
 reader.on('error', e => {clearInterval(watchdog);console.error('No se pudo iniciar el lector:',e.message);});
 reader.on('exit', (code,signal) => { clearInterval(watchdog);console.error(`Lector detenido (${signal||'código '+code}). Reinicia el servidor.`); game = mergeGame(game, {connected:false, error:'Lector detenido. Reinicia el servidor.'}); persistGame(); });
 }
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); youtube?.stop(); remoteLists?.stop(); process.exit(); });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { reader?.kill(); youtube?.stop(); remoteLists?.stop(); if(tactics)tactics.stop().finally(()=>process.exit());else process.exit(); });
 process.on('exit', () => {reader?.kill();youtube?.queue?.clear();});
 const {syncStats} = require('./listhammer');
 const root = path.join(__dirname, 'public');
@@ -94,6 +94,9 @@ const remoteLists=process.env.OVERLAY_REMOTE_LISTS_ENABLED==='true'?require('./r
 remoteLists?.start();
 let statsSyncTask=null;
 function refreshStats(){if(!statsSyncTask)statsSyncTask=syncStats(dataDir).then(stats=>{statsCache=stats;announcements.refresh();return stats;}).finally(()=>{statsSyncTask=null;});return statsSyncTask;}
+const tactics=process.env.OVERLAY_TACTICS_ENABLED==='true'?require('./tactics/server').createTactics({dataDir,port:Number(process.env.TACTICS_PORT||8767),interfaceName:process.env.TACTICS_INTERFACE||''}):null;
+tactics?.start().catch(e=>console.error('Anotaciones: '+e.message));
+process.once('exit',()=>{if(tactics)tactics.server.close();});
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control','no-store');
   const url = new URL(req.url, 'http://localhost');

@@ -1114,3 +1114,13 @@ Al detectar un cambio de ronda o de TOP/BOTTOM, el overlay principal muestra a p
 Nueva opción experimental **Galaxy: cámara y marcador** en el GUI, apagada por defecto, o `npm run galaxy -- --connect IP:PUERTO`. Abre ventanas distintas de control y cámara; el overlay conserva su fuente Navegador. Requiere scrcpy instalado aparte. Si Samsung no permite leer la pantalla virtual, el modo físico conserva el lector original y puede capturar la cámara directamente.
 
 Consulta [configuración, OBS, reconexión y pruebas pendientes](docs/galaxy-session.md). No se validó un Galaxy físico durante el desarrollo; prueba la compatibilidad antes de usarlo en un evento.
+
+### Anotaciones tácticas desde teléfono o iPad
+
+Activa **Anotaciones tácticas** en el GUI y pulsa **Abrir anotaciones**, o ejecuta `npm run tactics` / `wargaming-overlay tactics` para probar sin Android. También admite `start --tactics`. El panel local muestra un QR para el controlador, configuración OBS y un enlace separado a la capa transparente. No abre otra cámara: usa capturas JPEG de OBS a petición o como máximo 1 FPS y sincroniza trazos vectoriales.
+
+Requiere OBS WebSocket 5 habilitado y una escena limpia del mismo encuadre. Al reencuadrar, usa **Borrar y actualizar**. Consulta [inicio, OBS, red y validación](docs/tactics.md).
+
+### Novedades de 3.4.0
+
+Anotaciones tácticas opcionales con controlador móvil, QR, capa transparente para OBS y conexión usando la configuración local de OBS. Se mantiene la conexión Android simple por IP/puerto. También se corrigen la lectura de secundarias al final de la pantalla, la recuperación de bloqueos de sesiones terminadas y la detección de scrcpy en macOS al abrir desde Finder. Los límites de las pruebas de rendimiento están documentados en `docs/tactics-validation.md`.

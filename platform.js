@@ -19,6 +19,7 @@ function candidates(command,overrides={}){
   if(win&&env.LOCALAPPDATA)paths.push(p.join(env.LOCALAPPDATA,'Microsoft','WinGet','Links','adb.exe'));
   if(!win)paths.push('/opt/homebrew/bin/adb','/usr/local/bin/adb');
  }
+ if(!explicit&&command==='scrcpy'&&platform==='darwin')paths.push('/opt/homebrew/bin/scrcpy','/usr/local/bin/scrcpy');
  if(!explicit&&command==='brew'&&platform==='darwin')paths.push('/opt/homebrew/bin/brew','/usr/local/bin/brew');
  return [...new Set(paths)];
 }

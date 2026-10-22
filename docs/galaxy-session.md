@@ -59,7 +59,7 @@ Cámara: 1280×720 o 1920×1080; FPS 15/24/30/60; bitrate 2M/4M/8M. Valores inic
 
 ## OBS: fuentes separadas
 
-1. Añade una fuente **Captura de ventana/macOS Screen Capture** y elige exclusivamente **Overlay - Galaxy Camera**. No selecciones Tabletop Battles ni toda la pantalla del Mac. Da permisos de grabación de pantalla a OBS si macOS lo pide.
+1. Añade una fuente **Captura de ventana/macOS Screen Capture** y elige exclusivamente **Overlay - Android Camera**. No selecciones Tabletop Battles ni toda la pantalla del Mac. Da permisos de grabación de pantalla a OBS si macOS lo pide.
 2. Usa el lienzo de OBS como siempre; transforma/ajusta la imagen de cámara dentro de la escena sin cambiar el tamaño de la fuente del marcador.
 3. Conserva la fuente Navegador del marcador: `http://127.0.0.1:8765/overlay-art.html`, con su tamaño actual. Colócala encima de la cámara.
 4. La fuente del marcador sigue siendo el servidor local, no una captura del teléfono. No se configura OBS automáticamente ni se asegura que el selector de ventanas vuelva a enlazar una ventana recreada: compruébalo después de recuperar vídeo.
@@ -92,7 +92,7 @@ El launcher no inicia ni configura esa app. Abre una solución Wi-Fi, por ejempl
 - El servidor del marcador permanece activo durante la recuperación del vídeo; el lector conserva el puntaje anterior mientras no hay display válido. Si el propio servidor termina, también se vuelve a iniciar.
 - Cada pantalla virtual nueva obtiene su ID y se vuelve a verificar. El puerto/IP Wi-Fi que cambia sin un anuncio mDNS válido requiere detener y arrancar con el nuevo `--connect`.
 - `--no-reconnect` detiene la sesión al fallar un proceso. La opción GUI normal mantiene la recuperación activa.
-- Si aparece `galaxy-session.lock`, comprueba que no quede otra sesión propia abierta. Tras un cierre forzado solo elimina ese archivo si confirmas que el PID que contiene ya no corresponde a la sesión. No borres `game-state.json`, `rosters.json` ni `overlay-state.json`.
+- Los bloqueos de procesos que ya no existen se recuperan automáticamente al iniciar; los de procesos vivos o sin permiso de consulta se conservan. Si aparece `galaxy-session.lock` y persiste el error, comprueba que no quede otra sesión propia abierta. Tras un cierre forzado solo elimina ese archivo si confirmas que el PID que contiene ya no corresponde a la sesión. No borres `game-state.json`, `rosters.json` ni `overlay-state.json`.
 - Una desconexión USB puede interrumpir ADB Wi-Fi o el estado de la cámara en ciertos firmware. Valida desconectar el cable antes del evento; mantén carga con un cargador independiente si es necesario, evitando introducir otra captura USB en el Mac.
 
 ## Validación física pendiente (hazla antes del torneo)

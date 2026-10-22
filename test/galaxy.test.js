@@ -25,7 +25,7 @@ test('virtual session discovers dynamic display ID, probes helper before camera/
  await f.session.stop();assert.equal(f.session.children.size,0);assert.equal(JSON.parse(fs.readFileSync(path.join(f.dir,'galaxy-session.json'))).active,false);assert.equal(fs.existsSync(path.join(f.dir,'galaxy-session.lock')),false);
 });
 test('physical fallback uses the original reader; a second session refuses the same data directory',async t=>{
- const f=fixture(t,{scoreDisplay:'physical',cameraMode:'none'});await f.session.start();assert.equal(f.calls.length,2);assert.ok(!f.calls[1].args.includes('--display-file'));const other=new GalaxySession({dataDir:f.dir});await assert.rejects(other.start(),/sesión Galaxy/);
+ const f=fixture(t,{scoreDisplay:'physical',cameraMode:'none'});await f.session.start();assert.equal(f.calls.length,2);assert.ok(!f.calls[1].args.includes('--display-file'));const other=new GalaxySession({dataDir:f.dir});await assert.rejects(other.start(),/sesión Android/);
 });
 test('virtual accessibility failure stops all owned children before exposing a camera or reader',async t=>{
  const f=fixture(t);f.session.execute=()=>{throw Error('inaccessible display');};await assert.rejects(f.session.start(),/inaccessible/);assert.equal(f.session.children.size,0);assert.equal(f.calls.length,1);
@@ -54,4 +54,31 @@ test('video recovery keeps the overlay process serving scores while displays rec
 test('distributed Android helper matches its checked-in source and manifest',()=>{
  const dir=path.join(__dirname,'..','galaxy','android'),crypto=require('node:crypto');const m=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json')));
  const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(path.join(dir,file))).digest('hex');assert.equal(hash('src/overlay/DisplayDump.java'),m.sourceSha256);assert.equal(hash('display-dump.jar'),m.jarSha256);assert.equal(m.minAndroidApi,30);
+});
+
+test('macOS Finder launch finds Homebrew scrcpy without a shell PATH',()=>{
+ const {candidates,locate}=require('../platform');const context={platform:'darwin',env:{PATH:'/usr/bin:/bin'},home:'/Users/test'};
+ assert.ok(candidates('scrcpy',context).includes('/opt/homebrew/bin/scrcpy'));assert.ok(candidates('scrcpy',context).includes('/usr/local/bin/scrcpy'));assert.deepEqual(candidates('/custom/scrcpy',context),['/custom/scrcpy']);
+ assert.throws(()=>probe({}, {find:()=>null}),/No se encontró ADB/);assert.throws(()=>probe({}, {find:c=>c==='adb'?'adb':null}),/No se encontró scrcpy/);
+});
+test('headerless bottom viewport identifies all eight missions only with proven scroll direction',()=>{
+ const {spawnSync}=require('node:child_process'),{findPython}=require('../diagnostics');
+ const code=`
+from pathlib import Path
+import xml.etree.ElementTree as E
+from battle_reader import parse
+xml=Path('test/fixtures/headerless-final-player.xml').read_text()
+p=parse(xml)['players'];assert p[0]['secondaries'] is None
+assert len(p[1]['secondaries'])==8
+assert [m['name'] for m in p[1]['secondaries']][-2:]==['A Tempting Target','A Grievous Blow']
+for uncertain in [xml.replace('scroll-forward="false"','scroll-forward="true"'),xml.replace('scroll-backward="true"','scroll-backward="false"'),xml.replace('scroll-forward="false"','')]:
+ assert all(p['secondaries'] is None for p in parse(uncertain)['players'])
+`;
+ const r=spawnSync(findPython(),['-c',code],{cwd:path.join(__dirname,'..'),encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}});assert.equal(r.status,0,r.stderr);
+});
+test('Galaxy reclaims only a proven dead lock owner and preserves live or unknown locks',t=>{
+ const {acquireLock}=require('../galaxy/session');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'galaxy-lock-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const file=path.join(dir,'galaxy-session.lock');
+ fs.writeFileSync(file,'69047');acquireLock(file,{isAlive:()=>false});assert.equal(fs.readFileSync(file,'utf8'),String(process.pid));
+ assert.throws(()=>acquireLock(file,{isAlive:()=>true}),/activa/);assert.equal(fs.readFileSync(file,'utf8'),String(process.pid));
+ fs.writeFileSync(file,'invalid');assert.throws(()=>acquireLock(file,{isAlive:()=>false}),/inválido/);assert.equal(fs.readFileSync(file,'utf8'),'invalid');
 });

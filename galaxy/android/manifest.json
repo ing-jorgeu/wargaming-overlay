@@ -1,6 +1,6 @@
 {
-  "sourceSha256": "e19fd1dadd591745e6a102995bae60a6ba4be180aed2db1f4f49ff71e21e2b06",
-  "jarSha256": "86e838cf8f248e0ffedf3bb046086ff9de1ea77734836331323663ef883c6c2e",
+  "sourceSha256": "3aa3c8a3d12a932809a60471f250697bc9be3b9b1e2d5857220e6189eea5820e",
+  "jarSha256": "21124731adaca120a3dd57fbcd0441d87ec3e90f471ffa6d6fcef98e07c8ac8b",
   "r8Version": "8.3.37",
   "minAndroidApi": 30
 }

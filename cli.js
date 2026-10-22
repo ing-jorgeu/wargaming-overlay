@@ -17,7 +17,10 @@ const help=`wargaming-overlay ${version} — overlay local para OBS
 
   wargaming-overlay galaxy --help          Cámara Galaxy + control independiente
 
+  wargaming-overlay tactics               Anotaciones tácticas sin lector Android
+
 Opciones de start/doctor:
+  --tactics         Habilita anotaciones tácticas (puerto separado 8767)
   --remote-lists    Habilita enlaces y sincronización de listas remotas
   --port 8765       Puerto local (1024–65535); no necesita sudo
   --serial SERIAL   Selecciona un dispositivo
@@ -40,6 +43,7 @@ Por defecto: ~/Library/Application Support/wargaming-overlay en macOS;
 Ctrl+C detiene el servidor y lector. El último estado queda guardado.
 `;
 async function main(argv=process.argv.slice(2),{voiceTest}={}){
+ if(argv[0]==='tactics')return require('./tactics/cli').main(argv.slice(1));
  if(argv[0]==='galaxy')return require('./galaxy/cli').main(argv.slice(1));
  const args=[...argv];
  if(args.includes('--help')||args.includes('-h')){console.log(help);return}
@@ -47,7 +51,9 @@ async function main(argv=process.argv.slice(2),{voiceTest}={}){
  let command=args[0]&&!args[0].startsWith('-')?args.shift():'start';
  const options={};let source;
  const keys={'--port':'port','--serial':'serial','--interval':'interval','--adb':'adb','--python':'python','--display-file':'displayFile','--data-dir':'dataDir','--client-secret':'clientSecret','--test-tts':'testText','--text':'text','--voice':'voice','--provider':'provider','--fallback':'fallback','--speed':'speed'};
- while(args.length){const a=args.shift();if(a==='--remote-lists')options.remoteLists=true;else if(a==='--install-adb')options.install=true;else if(a==='--dry-run')options.dryRun=true;else if(keys[a]){const value=args.shift();if(value===undefined||(!['--text','--test-tts'].includes(a)&&(!value||value.startsWith('--'))))throw Error(`Falta el valor de ${a}`);options[keys[a]]=value}else if(command==='migrate'&&!source&&!a.startsWith('-'))source=a;else throw Error(`Argumento desconocido: ${a}. Usa --help.`)}
+ while(args.length){const a=args.shift();if(a==='--tactics')options.tactics=true;else if(a==='--remote-lists')options.remoteLists=true;else if(a==='--install-adb')options.install=true;else if(a==='--dry-run')options.dryRun=true;else if(keys[a]){const value=args.shift();if(value===undefined||(!['--text','--test-tts'].includes(a)&&(!value||value.startsWith('--'))))throw Error(`Falta el valor de ${a}`);options[keys[a]]=value}else if(command==='migrate'&&!source&&!a.startsWith('-'))source=a;else throw Error(`Argumento desconocido: ${a}. Usa --help.`)}
+ if(options.tactics&&command!=='start')throw Error('--tactics solo se usa con start.');
+ if(options.tactics)process.env.OVERLAY_TACTICS_ENABLED='true';
  if(options.displayFile&&command!=='start')throw Error('--display-file solo se usa con start.');
  if(options.remoteLists&&command!=='start')throw Error('--remote-lists solo se usa con start.');
  if(options.testText!==undefined){if(command!=='start')throw Error('--test-tts solo se usa sin subcomando o con start.');command='test-tts';options.text=options.testText;delete options.testText;}
